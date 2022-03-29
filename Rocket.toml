@@ -1,0 +1,17 @@
+[default]
+address = "127.0.0.1"
+ident = "instrumentality"
+json = "1 MiB"
+
+[debug]
+log_level = "debug"
+port = 8000
+
+[release]
+log_level = "critical"
+port = 12321
+cli_colors = false
+
+# [release.tls]
+# certs = "tls/cert-chain.pem"
+# key = "tls/key.pem"

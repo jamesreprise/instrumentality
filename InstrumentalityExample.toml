@@ -1,0 +1,17 @@
+[mongodb]
+hosts = "127.0.0.1"
+port = "27017"
+user = "instrumentality"
+password = ""
+database = "instrumentality"
+
+[content_types]
+instagram = ["post", "story", "live"]
+twitter = ["tweet", "like", "retweet", "story"]
+last_fm = ["scrobble"]
+twitch_tv = ["stream_start", "video", "stream_end"]
+
+[presence_types]
+twitter = ["follower_count_increase"]
+last_fm = ["listening_now"]
+twitch_tv = ["live"]
