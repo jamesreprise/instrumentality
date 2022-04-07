@@ -1,4 +1,4 @@
-//! Catchers for Rocket.
+//! General purpose error catchers.
 //!
 //! The default (and only) catcher is implemented here.
 //!

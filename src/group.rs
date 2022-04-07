@@ -1,12 +1,14 @@
+//! Groups for organisitions of subjects.
+
+use crate::key::Key;
+use crate::routes::create::CreateData;
+use crate::user::User;
+
 use chrono::{DateTime, Utc};
 use mongodb::Database;
 use rocket::State;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-
-use crate::key::Key;
-use crate::routes::create::CreateData;
-use crate::user::User;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Group {

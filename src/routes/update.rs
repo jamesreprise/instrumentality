@@ -1,4 +1,4 @@
-//! Update route for Rocket.
+//! Route for updating subjects and groups.
 //!
 //! The update route is implemented here.
 

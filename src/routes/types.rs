@@ -1,4 +1,4 @@
-//! Types route for rocket.
+//! Route to get supported content and presence types.
 //!
 //! The /types route is implemented here.
 //!

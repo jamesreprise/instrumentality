@@ -1,3 +1,5 @@
+//! Basic user concepts for Instrumentality.
+
 use crate::group::Group;
 use crate::rocket::futures::StreamExt;
 use crate::subject::Subject;

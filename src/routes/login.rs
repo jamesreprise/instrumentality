@@ -1,4 +1,4 @@
-//! Login route for rocket.
+//! Routes for fetching user information.
 //!
 //! The /login route is implemented here.
 //!

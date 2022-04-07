@@ -1,4 +1,4 @@
-//! Register route for Rocket.
+//! Route for registering as a new user for Instrumentality.
 //!
 //! The /register route is implemented here.
 //!

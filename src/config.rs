@@ -1,3 +1,5 @@
+//! Functions for interpretation of configurations.
+
 use serde::Deserialize;
 use std::collections::HashMap;
 
@@ -10,9 +12,9 @@ pub struct IConfig {
 
 #[derive(Deserialize, Debug)]
 pub struct MDBIConfig {
-    // user: String,
-    // password: String,
-    pub hosts: String,
+    pub user: String,
+    pub password: String,
+    pub hosts: String, // This should be an array and be supported as an array in mdb.rs.
     pub port: String,
     pub database: String,
 }

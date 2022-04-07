@@ -1,4 +1,4 @@
-//! Invite route for Rocket.
+//! Route for creating invites for registering users.
 //!
 //! The /invite route is implemented here.
 //!

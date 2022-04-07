@@ -1,4 +1,4 @@
-//! Delete route for Rocket.
+//! Route for deleting subjects and groups.
 //!
 //! The /delete route is implemented here.
 //!

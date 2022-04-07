@@ -17,11 +17,32 @@ cargo build --release
 ## Download
 See <https://github.com/berserksystems/instrumentality/releases/>.
 
+## Documentation
+See <https://instrumentality.berserksystems.com/docs/>.
 
 ## Architecture
 This is a Rocket web server, the core logic of which can be seen in [main.rs](src/main.rs). All information is written to a MongoDB cluster, seen in [mdb.rs](src/mdb.rs). 
 
-Instrumentality is interacted with solely through routes, which are stored in [/routes](/src/routes/). From the top down, [groups](src/group.rs) contain [subjects](src/subject.rs) contain [profiles](src/profile.rs). A profile is any discrete source of information. There are some very basic notions of [authentication](src/key.rs) and [users](src/user.rs). 
+Instrumentality is interacted with solely through routes, which are stored in [/routes](/src/routes/). 
+```
+Content Routes:
+    >> (add) POST /add
+    >> (view) GET /view?<subjects>
+    >> (types) GET /types
+User Management Routes:
+    >> (login) GET /login
+    >> (invite) GET /invite
+    >> (register) POST /register
+Subject/Group Management Routes:
+    >> (create) POST /create
+    >> (delete) POST /delete
+    >> (update) POST /update
+
+```
+All POST requests only accept JSON. Every route except types requires an API key in the headers as `X-API-KEY`. 
+See the documentation for each route for examples on how to use them.
+
+From the top down, [groups](src/group.rs) contain [subjects](src/subject.rs) contain [profiles](src/profile.rs). A profile is any discrete source of information. There are some very basic notions of [authentication](src/key.rs) and [users](src/user.rs). 
 
 This server is a backend and intentionally only returns JSON.
 

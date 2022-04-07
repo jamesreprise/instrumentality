@@ -1,3 +1,5 @@
+//! Routes for Rocket.
+
 pub mod add;
 pub mod catchers;
 pub mod create;

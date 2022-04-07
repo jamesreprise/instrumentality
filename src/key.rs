@@ -1,3 +1,5 @@
+//! API keys for authorisation.
+
 use crate::user::User;
 
 use mongodb::Collection;

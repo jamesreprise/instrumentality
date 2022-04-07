@@ -1,4 +1,4 @@
-//! View route for Rocket.
+//! Route for viewing data about a subject or group.
 //!
 //! The /view route is implemented here.
 //!

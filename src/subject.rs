@@ -1,3 +1,5 @@
+//! Subjects for organisation of profiles.
+
 use crate::key::Key;
 use crate::routes::create::CreateData;
 use crate::user::User;

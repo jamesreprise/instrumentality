@@ -1,4 +1,4 @@
-//! Data enums for content and presence.
+//! Data enums for content, presence and profile metadata.
 //!
 //! # Content
 //! Content exists to represent any event occurring at a certain point in time.

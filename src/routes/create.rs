@@ -1,4 +1,4 @@
-//! Create route for Rocket.
+//! Route for creating subjects and groups.
 //!
 //! The /create route is implemented here.
 //!

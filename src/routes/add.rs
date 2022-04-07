@@ -1,4 +1,4 @@
-//! Add routes for Rocket.
+//! Route for adding data to Instrumentality.
 //!
 //! The /add route is implemented here.
 //!
