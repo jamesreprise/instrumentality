@@ -1,7 +1,19 @@
 //! Data enums for content, presence and profile metadata.
 //!
+//! # A note on Data
+//!
+//! The quality of all data provided to Instrumentality will determine it's usefulness.
+//! For example, if one data provider posts full profile metadata and another posts the
+//! minimum subset in quick succession, Instrumentality must discard the full profile
+//! in favour of the minimum subset as it has no ability to determine that all the
+//! previous data was not removed.
+//!
+//! In the future, profiles with lots of coverage could be used to sniff out lazy data
+//! providers automatically or through a reputation system. However, at this stage,
+//! data providers posting all available data is key to the utility of the platform.
+//!
 //! # Content
-//! Content exists to represent any event occurring at a certain point in time.
+//! Content exists to represent any event occurring at a discrete point in time.
 //!
 //! Examples of content include:
 //! - a blog entry.
@@ -30,7 +42,7 @@
 //!
 //! ## IDs
 //! In order to continue attributing new content to the correct user after a username
-//! change, you must fill the id field with a unique ID. Instrumentality will not
+//! change, you must fill the id field with a unique user ID. Instrumentality will not
 //! stop you submitting content with a username as the subject but this is suboptimal.
 //!
 //! ## Content types
@@ -97,6 +109,13 @@
 //!     retrieved_at: "2022-01-01T00:00:05Z",
 //! };
 //! ```
+//!
+//! # Meta
+//! Profile metadata changes regularly and sometimes silently. Without data providers
+//! keeping a local copy of the data, it's difficult to determine what has changed from fetch
+//! to fetch. Given that each request of the profile will generally contain a full copy of
+//! that profile, it's easier to post the entire profile to Instrumentality to determine
+//! changes.
 
 use crate::config::IConfig;
 
@@ -142,6 +161,7 @@ pub enum Data {
         verified: Option<bool>,
         references: Option<HashMap<String, String>>,
         link: Option<String>,
+        retrieved_at: Option<DateTime<Utc>>,
         added_by: Option<String>,
         added_at: Option<DateTime<Utc>>,
     },
@@ -228,6 +248,7 @@ impl Data {
                 verified,
                 references,
                 link,
+                retrieved_at,
                 ..
             } => Self::Meta {
                 id,
@@ -241,6 +262,7 @@ impl Data {
                 verified,
                 references,
                 link,
+                retrieved_at,
                 added_by: Some(uuid),
                 added_at: Some(Utc::now()),
             },
