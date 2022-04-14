@@ -17,6 +17,7 @@
 
 use crate::group::Group;
 use crate::key::Key;
+use crate::routes::queue;
 use crate::subject::*;
 use crate::user::User;
 
@@ -39,7 +40,7 @@ pub async fn delete(data: Json<DeleteData>, db: &State<Database>, key: Key) -> V
     // UUID of the requester.
     let req_uuid = User::user_with_key(&key.key, db).await.unwrap().uuid;
     let subj_coll: Collection<Subject> = db.collection("subjects");
-    if let Ok(Some(_)) = subj_coll
+    if let Ok(Some(subject)) = subj_coll
         .find_one(doc! {"uuid": &data.uuid, "created_by": &req_uuid}, None)
         .await
     {
@@ -57,6 +58,12 @@ pub async fn delete(data: Json<DeleteData>, db: &State<Database>, key: Key) -> V
                 .delete_one(doc! {"uuid": &data.uuid, "created_by": &req_uuid}, None)
                 .await
                 .unwrap();
+
+            for platform in subject.profiles.keys() {
+                for id in subject.profiles.get(platform).unwrap() {
+                    queue::remove_queue_item(id, platform, db).await.unwrap();
+                }
+            }
 
             json!({ "response" : "OK"})
         } else {

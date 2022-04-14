@@ -118,8 +118,11 @@
 //! changes.
 
 use crate::config::IConfig;
+use crate::routes::queue;
 
 use chrono::{DateTime, Utc};
+use mongodb::Database;
+use rocket::State;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -133,6 +136,7 @@ pub enum Data {
         retrieved_at: DateTime<Utc>,
         added_by: Option<String>,
         added_at: Option<DateTime<Utc>>,
+        queue_id: Option<String>,
     },
     Content {
         id: String,
@@ -148,6 +152,7 @@ pub enum Data {
         references: Option<HashMap<String, String>>,
         added_by: Option<String>,
         added_at: Option<DateTime<Utc>>,
+        queue_id: Option<String>,
     },
     Meta {
         id: String,
@@ -164,6 +169,7 @@ pub enum Data {
         retrieved_at: Option<DateTime<Utc>>,
         added_by: Option<String>,
         added_at: Option<DateTime<Utc>>,
+        queue_id: Option<String>,
     },
 }
 
@@ -188,10 +194,15 @@ impl Data {
                 .get(platform)
                 .unwrap()
                 .contains(content_type),
-            _ => true,
+            Self::Meta { platform, .. } => {
+                config.presence_types.contains_key(platform)
+                    || config.content_types.contains_key(platform)
+            }
         }
     }
 
+    // I'm sure this can be cleaned up but I don't know how.
+    // This is the debt to be paid for using an enum.
     pub fn tag(self: Self, uuid: String) -> Self {
         match self {
             Self::Presence {
@@ -199,12 +210,14 @@ impl Data {
                 platform,
                 presence_type,
                 retrieved_at,
+                queue_id,
                 ..
             } => Self::Presence {
                 id,
                 platform,
                 presence_type,
                 retrieved_at,
+                queue_id,
                 added_by: Some(uuid),
                 added_at: Some(Utc::now()),
             },
@@ -220,6 +233,7 @@ impl Data {
                 body,
                 media,
                 references,
+                queue_id,
                 ..
             } => Self::Content {
                 id,
@@ -233,6 +247,7 @@ impl Data {
                 body,
                 media,
                 references,
+                queue_id,
                 added_by: Some(uuid),
                 added_at: Some(Utc::now()),
             },
@@ -249,6 +264,7 @@ impl Data {
                 references,
                 link,
                 retrieved_at,
+                queue_id,
                 ..
             } => Self::Meta {
                 id,
@@ -263,10 +279,39 @@ impl Data {
                 references,
                 link,
                 retrieved_at,
+                queue_id,
                 added_by: Some(uuid),
                 added_at: Some(Utc::now()),
             },
         }
+    }
+
+    // We need to process queue jobs.
+    pub async fn process_queue(self: Self, db: &State<Database>) -> Self {
+        match &self {
+            Self::Content {
+                queue_id,
+                id,
+                platform,
+                added_by,
+                ..
+            } => queue::process(queue_id, id, platform, added_by, db).await,
+            Self::Presence {
+                queue_id,
+                id,
+                platform,
+                added_by,
+                ..
+            } => queue::process(queue_id, id, platform, added_by, db).await,
+            Self::Meta {
+                queue_id,
+                id,
+                platform,
+                added_by,
+                ..
+            } => queue::process(queue_id, id, platform, added_by, db).await,
+        };
+        self
     }
 }
 
@@ -277,14 +322,14 @@ pub struct Datas {
 
 impl Datas {
     pub fn verify(self: Self, config: &IConfig) -> Self {
-        let mut verified_datas = Vec::new();
-        for data in self.data {
-            if data.verify(config) {
-                verified_datas.push(data);
+        let mut verified_data = Vec::new();
+        for d in self.data {
+            if d.verify(config) {
+                verified_data.push(d);
             }
         }
         Self {
-            data: verified_datas,
+            data: verified_data,
         }
     }
 
@@ -294,5 +339,15 @@ impl Datas {
             tagged_data.push(d.tag(uuid.clone()))
         }
         Self { data: tagged_data }
+    }
+
+    pub async fn process_queue(self: Self, db: &State<Database>) -> Self {
+        let mut processed_data = Vec::new();
+        for d in self.data {
+            processed_data.push(d.process_queue(db).await);
+        }
+        Self {
+            data: processed_data,
+        }
     }
 }

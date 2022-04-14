@@ -94,24 +94,15 @@ async fn use_invite(
 ) -> Result<RefEntry, RegisterError> {
     let refs_coll: Collection<RefEntry> = db.collection("referrals");
     let result = refs_coll
-        .find_one(
+        .find_one_and_update(
             doc! {"ref_code": req.ref_code.as_str(), "used": false},
+            doc! {"$set": {"used": true, "used_by": &user.uuid}},
             None,
         )
-        .await;
-    if let Ok(Some(referral)) = result {
-        let result = refs_coll
-            .update_one(
-                doc! {"ref_code": req.ref_code.as_str(), "used": false},
-                doc! {"$set": {"used": true, "used_by": &user.uuid}},
-                None,
-            )
-            .await;
-        match result {
-            Ok(_) => Ok(referral),
-            _ => Err(RegisterError),
-        }
-    } else {
-        Err(RegisterError)
+        .await
+        .unwrap();
+    match result {
+        Some(entry) => Ok(entry),
+        _ => Err(RegisterError),
     }
 }

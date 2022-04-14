@@ -30,7 +30,9 @@ pub async fn add(
     let data = data
         .into_inner()
         .verify(config)
-        .tag(User::user_with_key(&key.key, db).await.unwrap().uuid);
+        .tag(User::user_with_key(&key.key, db).await.unwrap().uuid)
+        .process_queue(db)
+        .await;
     let data_coll: Collection<Data> = db.collection("data");
     // We need to merge existing Data::Content here.
     // If it already exists, check if the new data is a superset of the

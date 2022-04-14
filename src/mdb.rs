@@ -15,7 +15,8 @@ pub async fn open(config: &IConfig) -> Result<Database, Box<dyn std::error::Erro
     let hosts = &config.mongodb.hosts;
     let port = &config.mongodb.port;
     let database = &config.mongodb.database;
-    let mut mongo_options = ClientOptions::parse(format!("mongodb://{user}:{password}@{hosts}:{port}")).await?;
+    let mut mongo_options =
+        ClientOptions::parse(format!("mongodb://{user}:{password}@{hosts}:{port}")).await?;
     mongo_options.connect_timeout = Some(Duration::new(1, 0));
     mongo_options.heartbeat_freq = Some(Duration::new(3, 0));
     mongo_options.server_selection_timeout = Some(Duration::new(5, 0));

@@ -6,6 +6,7 @@ pub mod create;
 pub mod delete;
 pub mod invite;
 pub mod login;
+pub mod queue;
 pub mod register;
 pub mod types;
 pub mod update;

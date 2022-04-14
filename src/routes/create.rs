@@ -8,6 +8,7 @@
 
 use crate::group::*;
 use crate::key::Key;
+use crate::routes::queue;
 use crate::subject::*;
 
 use mongodb::Collection;
@@ -23,7 +24,7 @@ use std::collections::HashMap;
 pub enum CreateData {
     CreateSubject {
         name: String,
-        profiles: HashMap<String, String>,
+        profiles: HashMap<String, Vec<String>>,
         description: Option<String>,
     },
     CreateGroup {
@@ -46,6 +47,11 @@ async fn create_subject(data: CreateData, db: &State<Database>, key: Key) -> Val
     let data_coll: Collection<Subject> = db.collection("subjects");
     if let Some(subject) = Subject::from_subject_create(data, db, key).await {
         if let Ok(_) = data_coll.insert_one(&subject, None).await {
+            for platform in subject.profiles.keys() {
+                for id in subject.profiles.get(platform).unwrap() {
+                    queue::add_queue_item(id, platform, db).await.unwrap();
+                }
+            }
             json!({ "response" : "OK", "subject": &subject})
         } else {
             json!({ "response" : "ERROR", "text": "Subject by that name already exists."})

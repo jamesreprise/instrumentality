@@ -26,6 +26,7 @@ use crate::routes::create::*;
 use crate::routes::delete::*;
 use crate::routes::invite::*;
 use crate::routes::login::*;
+use crate::routes::queue::*;
 use crate::routes::register::*;
 use crate::routes::types::*;
 use crate::routes::update::*;
@@ -43,7 +44,6 @@ mod data;
 mod group;
 mod key;
 mod mdb;
-mod profile;
 mod routes;
 mod subject;
 mod user;
@@ -55,15 +55,16 @@ async fn rocket() -> _ {
     let iconfig = config::open().unwrap();
     let database = mdb::open(&iconfig).await.unwrap();
     rocket::custom(figment)
-        .mount("/", routes![add])
         .mount("/", routes![register])
         .mount("/", routes![invite])
+        .mount("/", routes![login])
         .mount("/", routes![types])
+        .mount("/", routes![add])
+        .mount("/", routes![view])
+        .mount("/", routes![queue])
         .mount("/", routes![create])
         .mount("/", routes![delete])
-        .mount("/", routes![view])
         .mount("/", routes![update])
-        .mount("/", routes![login])
         .mount("/", FileServer::from(relative!("files")))
         .register("/", catchers![default_err])
         .attach(AdHoc::on_ignite("Config", |rocket| async move {
