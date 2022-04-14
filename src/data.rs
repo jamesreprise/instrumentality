@@ -287,31 +287,41 @@ impl Data {
     }
 
     // We need to process queue jobs.
-    pub async fn process_queue(self: Self, db: &State<Database>) -> Self {
-        match &self {
+    pub async fn process_queue(self: &Self, db: &State<Database>) -> bool {
+        match self {
             Self::Content {
                 queue_id,
                 id,
                 platform,
                 added_by,
                 ..
-            } => queue::process(queue_id, id, platform, added_by, db).await,
+            } => queue::process(queue_id, id, platform, added_by, None, db).await,
             Self::Presence {
                 queue_id,
                 id,
                 platform,
                 added_by,
                 ..
-            } => queue::process(queue_id, id, platform, added_by, db).await,
+            } => queue::process(queue_id, id, platform, added_by, None, db).await,
             Self::Meta {
                 queue_id,
                 id,
+                username,
                 platform,
                 added_by,
                 ..
-            } => queue::process(queue_id, id, platform, added_by, db).await,
-        };
-        self
+            } => {
+                queue::process(
+                    queue_id,
+                    id,
+                    platform,
+                    added_by,
+                    Some(username.to_string()),
+                    db,
+                )
+                .await
+            }
+        }
     }
 }
 
@@ -344,7 +354,9 @@ impl Datas {
     pub async fn process_queue(self: Self, db: &State<Database>) -> Self {
         let mut processed_data = Vec::new();
         for d in self.data {
-            processed_data.push(d.process_queue(db).await);
+            if d.process_queue(db).await {
+                processed_data.push(d);
+            }
         }
         Self {
             data: processed_data,

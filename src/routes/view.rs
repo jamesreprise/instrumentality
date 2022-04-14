@@ -132,7 +132,7 @@ pub async fn view(subjects: Vec<String>, db: &State<Database>, _key: Key) -> Val
         let mut subject_data: SubjectData = SubjectData::new(&s);
         for platform_name in s.profiles.keys() {
             let mut platform_data = PlatformData::new();
-            for platform_id in s.profiles.get(platform_name) {
+            for platform_id in s.profiles.get(platform_name).unwrap() {
                 let f = filter.clone();
                 let meta_data = data_coll
                     .find_one(
@@ -142,6 +142,7 @@ pub async fn view(subjects: Vec<String>, db: &State<Database>, _key: Key) -> Val
                     .await
                     .unwrap();
                 let mut profile_data: ProfileData = ProfileData::new(meta_data);
+
                 let presence_cursor = data_coll
                     .find(
                         doc! {"id": &platform_id, "platform": &platform_name, "presence_type": {"$exists": true}},
@@ -160,7 +161,6 @@ pub async fn view(subjects: Vec<String>, db: &State<Database>, _key: Key) -> Val
                     )
                     .await
                     .unwrap();
-
                 let content_data: Vec<Result<Data, mongodb::error::Error>> =
                     content_cursor.collect().await;
                 profile_data.content = content_data.into_iter().map(|d| d.unwrap()).collect();

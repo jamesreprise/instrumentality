@@ -17,7 +17,7 @@ pub struct Subject {
     pub created_at: DateTime<Utc>,
     pub created_by: String,
     pub name: String,
-    pub profiles: HashMap<String, Vec<String>>, // e.g. "8903128319026310" -> "twitter"
+    pub profiles: HashMap<String, Vec<String>>, // e.g. "twitter" -> ["123", "456"]
 
     // Subjects are generally people or organisations.
     // It is outside of Instrumentality's scope to uniquely identify them in
@@ -47,9 +47,9 @@ impl Subject {
                 uuid: Uuid::new_v4().to_string(),
                 created_at: Utc::now(),
                 created_by: User::user_with_key(&key.key, db).await.unwrap().uuid,
-                name: name,
-                profiles: profiles,
-                description: description,
+                name,
+                profiles,
+                description,
             }),
             _ => None,
         }

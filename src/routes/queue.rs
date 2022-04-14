@@ -62,6 +62,7 @@
 
 use crate::data::Data;
 use crate::key::Key;
+use crate::user::User;
 
 use chrono::offset::TimeZone;
 use chrono::{DateTime, Duration, Utc};
@@ -78,7 +79,7 @@ use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct InternalQueueItem {
-    uuid: String, // Queue ID.
+    queue_id: String, // Queue ID.
     platform_id: String,
     platform: String,
     last_processed: DateTime<Utc>,
@@ -89,10 +90,10 @@ struct InternalQueueItem {
 impl InternalQueueItem {
     fn new(platform_id: String, platform: String) -> Self {
         Self {
-            uuid: Uuid::new_v4().to_string(),
+            queue_id: Uuid::new_v4().to_string(),
             platform_id,
             platform,
-            last_processed: Utc.ymd(1970, 1, 1).and_hms(0, 1, 1),
+            last_processed: Utc.ymd(1970, 1, 1).and_hms(0, 0, 1),
             lock_holder: None,
             lock_acquired_at: None,
         }
@@ -101,46 +102,38 @@ impl InternalQueueItem {
 
 #[get("/queue?<platforms>")]
 pub async fn queue(platforms: Vec<String>, db: &State<Database>, key: Key) -> Value {
-    // This is not optimal for performance. Should be running as a scheduled task in a thread.
-    clear_old_locks(&db).await;
+    if platforms.is_empty() {
+        json!({ "response": "ERROR", "text": "You must specify which platforms you can do jobs for."})
+    } else {
+        // This is not optimal for performance. Should be running as a scheduled task in a thread.
+        clear_old_locks(&db).await;
 
-    let filter_builder =
-        FindOneAndUpdateOptions::builder().sort(doc! {"last_processed": -1 as i32});
+        let filter_builder =
+            FindOneAndUpdateOptions::builder().sort(doc! {"last_processed": -1 as i32});
 
-    let filter = filter_builder.build();
+        let filter = filter_builder.build();
 
-    let q_coll: Collection<InternalQueueItem> = db.collection("queue");
-    let result = q_coll
-        .find_one_and_update(
-            doc! { "lock_holder": Bson::Null, "platform": {"$in": &platforms} },
-            doc! { "$set": {"lock_holder": &key.key, "lock_acquired_at": Utc::now().to_string()}},
-            filter,
-        )
-        .await
-        .unwrap()
-        .unwrap();
+        let q_coll: Collection<InternalQueueItem> = db.collection("queue");
+        let result = q_coll
+            .find_one_and_update(
+                doc! { "lock_holder": Bson::Null, "platform": {"$in": &platforms} },
+                doc! { "$set": 
+                                {
+                                "lock_holder": User::user_with_key(&key.key, db).await.unwrap().uuid, "lock_acquired_at": Utc::now().to_string()
+                                }
+                            },
+                filter,
+            )
+            .await
+            .unwrap();
+        if let Some(q_item) = result {
+            let username: String = get_username(&q_item.platform_id, &q_item.platform, db).await;
 
-    let filter_builder = FindOneOptions::builder().projection(doc! {"username": 1 as i32});
-
-    let filter = filter_builder.build();
-
-    #[derive(Debug, Serialize, Deserialize)]
-    struct Username {
-        username: String,
+            json!({ "queue_id": &q_item.queue_id, "username": &username, "platform": &q_item.platform })
+        } else {
+            json!({ "response": "ERROR", "text": "There are no jobs available. Please try again later."})
+        }
     }
-
-    let data_coll: Collection<Data> = db.collection("data");
-    let username = data_coll
-        .clone_with_type::<Username>()
-        .find_one(
-            doc! {"id": &result.platform_id, "platform": &result.platform},
-            filter,
-        )
-        .await
-        .unwrap()
-        .unwrap();
-
-    json!({ "uuid": &result.uuid, "username": &username.username, "platform": &result.platform })
 }
 
 pub async fn process(
@@ -148,22 +141,60 @@ pub async fn process(
     id: &String,
     platform: &String,
     added_by: &Option<String>,
+    username: Option<String>,
     db: &State<Database>,
 ) -> bool {
-    let added_by = added_by.as_ref().unwrap();
+    // If the data is part of a queue job...
     if let Some(queue_id) = queue_id {
+        let added_by = added_by.as_ref().unwrap();
         let q_coll: Collection<InternalQueueItem> = db.collection("queue");
-        let update_result = q_coll
-            .update_one(
-                doc! { "queue_id" : queue_id, "platform_id": id, "platform": platform, "lock_holder": added_by },
-                doc! { "$set": { "lock_holder": Bson::Null, "last_processed": Utc::now().to_string() } },
+        // If this is a metadata update...
+        if let Some(username) = username {
+            let find_result = q_coll
+            .find_one(
+                // It's possible we haven't found an ID for this user yet.
+                doc! { "queue_id" : queue_id, "platform": platform, "platform_id": &username, "lock_holder": added_by },
                 None,
             )
             .await
             .unwrap();
-        update_result.modified_count == 1
+            // and if so...
+            if let Some(_) = find_result {
+                let _q_update_result = q_coll
+                    .update_one(
+                        doc! { "queue_id" : queue_id, "lock_holder": added_by },
+                        // Update the queue item to use the platform ID instead of a username.
+                        doc! { "$set": { "platform_id": id } },
+                        None,
+                    )
+                    .await
+                    .unwrap();
+                // and update the subject to use the platform ID instead of a username.
+                let subj_coll: Collection<InternalQueueItem> = db.collection("subjects");
+                let platform_query_string = format!("profiles.{}", platform);
+                let platform_set_string = format!("profiles.{}.$", platform);
+                let _subj_update_result = subj_coll
+                    .update_one(
+                        doc! { &platform_query_string: &username },
+                        doc! { "$set": {&platform_set_string: id} },
+                        None,
+                    )
+                    .await
+                    .unwrap();
+            }
+        }
+        let q_update_result = q_coll
+            .update_one(
+                doc! { "queue_id" : queue_id, "lock_holder": added_by },
+                doc! { "$set": {"lock_holder": Bson::Null, "lock_acquired_at": Bson::Null, "last_processed": Utc::now().to_string() } },
+                None,
+            )
+            .await
+            .unwrap();
+        q_update_result.modified_count == 1
     } else {
-        false
+        // If the job doesn't contain a queue ID, it passes queue processing.
+        true
     }
 }
 
@@ -204,4 +235,38 @@ pub async fn clear_old_locks(db: &State<Database>) {
         )
         .await
         .unwrap();
+}
+
+pub async fn get_username(platform_id: &String, platform: &String, db: &State<Database>) -> String {
+    async fn from_meta(
+        platform_id: &String,
+        platform: &String,
+        db: &State<Database>,
+    ) -> Option<String> {
+        let filter_builder = FindOneOptions::builder().projection(doc! {"username": 1 as i32});
+
+        let filter = filter_builder.build();
+
+        #[derive(Debug, Serialize, Deserialize)]
+        struct Username {
+            username: String,
+        }
+
+        let data_coll: Collection<Data> = db.collection("data");
+        let username = data_coll
+            .clone_with_type::<Username>()
+            .find_one(doc! {"id": &platform_id, "platform": &platform}, filter)
+            .await
+            .unwrap();
+
+        if let Some(username) = username {
+            Some(username.username)
+        } else {
+            None
+        }
+    }
+
+    from_meta(platform_id, platform, db)
+        .await
+        .unwrap_or(platform_id.to_string())
 }

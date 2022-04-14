@@ -42,7 +42,7 @@ Subject/Group Management Routes:
 All POST requests only accept JSON. Every route except types requires an API key in the headers as `X-API-KEY`. 
 See the documentation for each route for examples on how to use them.
 
-From the top down, [groups](src/group.rs) contain [subjects](src/subject.rs) contain [profiles](src/profile.rs). A profile is any discrete source of information. There are some very basic notions of [authentication](src/key.rs) and [users](src/user.rs). 
+From the top down, [groups](src/group.rs) contain [subjects](src/subject.rs) contain profile IDs. A profile is any discrete source of information. There are some very basic notions of [authentication](src/key.rs) and [users](src/user.rs). 
 
 This server is a backend and intentionally only returns JSON.
 
@@ -60,13 +60,13 @@ This server is a backend and intentionally only returns JSON.
 - [x] /create, /update, /delete
 - [x] /view.
 - [x] Automatic deploying of MongoDB indexes.
+- [~] /queue.
 
 ### Future
 #### Minor
 - [ ] Live config reloading.
 - [ ] /leaderboard.
-- [ ] Channels & webhooks.
-- [ ] /queue.
+- [ ] Channels & webhooks
 
 #### Major
 - [ ] Dataset merging.

@@ -60,7 +60,6 @@ async fn unique_subject_name_index(
     let idx_options = IndexOptions::builder()
         .name(String::from("Unique Subject Name"))
         .unique(true)
-        .sparse(true)
         .build();
 
     let idx_model = IndexModel::builder()
