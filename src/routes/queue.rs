@@ -136,6 +136,12 @@ pub async fn queue(platforms: Vec<String>, db: &State<Database>, key: Key) -> Va
     }
 }
 
+// This is a really bad function. The logic needs to be simplified significantly.
+// There are several sources of uncertainty that this function resolves:
+// - Does the supplied queue_id actually exist?
+// - Is the queue item's lock held by the user submitting the data?
+// - Does the queue item contain a username instead of a platform id?
+// -
 pub async fn process(
     queue_id: &String,
     id: &String,

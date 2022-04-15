@@ -6,7 +6,8 @@
 //! For example, if one data provider posts full profile metadata and another posts the
 //! minimum subset in quick succession, Instrumentality must discard the full profile
 //! in favour of the minimum subset as it has no ability to determine that all the
-//! previous data was not removed.
+//! previous data was not removed by the user between posts. This also applies to
+//! content.
 //!
 //! In the future, profiles with lots of coverage could be used to sniff out lazy data
 //! providers automatically or through a reputation system. However, at this stage,
@@ -22,12 +23,13 @@
 //!
 //! The only requirements of content are that it must have a subject, a content type
 //! and a time retrieved. For example,
-//! ```rust
-//! let tweet: Content = {
-//!     id: "123456789"
+//! ```compile_fail
+//! # use instrumentality::data::Data;
+//! let tweet: Data = Data::Content {
+//!     id: "123456789",
 //!     platform: "twitter",
 //!     content_type: "tweet",
-//!     retrieved_at: "2038-01-19T03:14:07Z", // All times must be in UTC+00:00/UTC±0: Z
+//!     created_at: Utc.ymd(2038, 1, 19).and_hms(3, 14, 7),
 //!     body: "I love my epoch.",
 //! };
 //! ```
@@ -50,23 +52,25 @@
 //! 'stories' are a common temporary post feature that exist on top a platforms 'bread
 //! and butter' content. In order to differentiate between content types on the same
 //! platform we tag them with a type. For example,
-//! ```rust
-//! let ig_post: Content = {
+//! ```compile_fail
+//! # use instrumentality::data::Data;
+//! let ig_post: Data = Data::Content {
 //!     id: "123456789",
 //!     platform: "instagram",
 //!     content_type: "post",
-//!     retrieved_at: "2022-01-01T00:00:05Z", // All times must be in UTC±00:00/UTC Z
+//!     created_at: Utc.ymd(2022, 1, 1).and_hms(0, 0, 5),
 //!     body: "Happy new year!",
 //!     media: ["https://..."]
 //! };
 //! ```
 //! and
-//! ```rust
-//! let ig_story: Content = {
+//! ```compile_fail
+//! # use instrumentality::data::Data;
+//! let ig_story: Data = Data::Content {
 //!     id: "123456789",
 //!     platform: "instagram",
 //!     content_type: "story",
-//!     retrieved_at: "2022-01-01T00:00:05Z",
+//!     created_at: Utc.ymd(2022, 1, 1).and_hms(0, 0, 5),
 //!     body: "Happy new year!",
 //!     media: ["https://..."]
 //! };
@@ -101,12 +105,14 @@
 //! than content posts.
 //!
 //! For example,
-//! ```rust
-//! let twitch_live: Presence = {
+//! ```compile_fail
+//! # use instrumentality::data::Data;
+//! # use chrono::{DateTime, Utc, TimeZone};
+//! let twitch_live: Data = Data::Presence {
 //!     id: "123456789",
-//!     platform: "twitch",
+//!     platform: "twitch",      
 //!     presence_type: "livestream",
-//!     retrieved_at: "2022-01-01T00:00:05Z",
+//!     retrieved_at: Utc.ymd(2022, 1, 1).and_hms(0, 0, 0),
 //! };
 //! ```
 //!
@@ -310,8 +316,8 @@ impl Datas {
         }
     }
 
-    pub fn get_meta(self: &Self) -> Option<&Data> {
-        for d in &self.data {
+    pub fn get_meta(datas: &Vec<Data>) -> Option<&Data> {
+        for d in datas {
             match d {
                 Data::Meta { .. } => return Some(d),
                 _ => (),
@@ -320,12 +326,8 @@ impl Datas {
         None
     }
 
-    pub fn get_data(self: &Self) -> &Data {
-        return &self.data[0];
-    }
-
-    pub fn get_info(self: &Self) -> (&String, &String, &Option<String>, Option<&String>) {
-        let meta = self.get_meta();
+    pub fn get_info(datas: &Vec<Data>) -> (&String, &String, &Option<String>, Option<&String>) {
+        let meta = Datas::get_meta(datas);
         if meta.is_some() {
             let meta = meta.unwrap();
             let (platform_id, platform, added_by, username) = match meta {
@@ -340,7 +342,7 @@ impl Datas {
             };
             return (platform_id, platform, added_by, username);
         } else {
-            let data = self.get_data();
+            let data = &datas[0];
             let (platform_id, platform, added_by) = match data {
                 Data::Presence {
                     id,
@@ -360,6 +362,13 @@ impl Datas {
         }
     }
 
+    // The logic for this function needs to be simplified significantly.
+    // There are several sources of uncertainty that this function resolves:
+    // - Is there data to be processed and is there an attached queue_id?
+    // - Does the given queue_id reference an actual job?
+    // - Does the queue item have a username attached or a platform id?
+    // - Does all the data in self.data pertain to the queue job? If not filter it out.
+    // Then get relevant data and pass it to the queue for processing.
     pub async fn process_queue(self: Self, db: &State<Database>) -> Self {
         if !self.data.is_empty() && self.queue_id.is_some() {
             let mut processed_data = Vec::new();
@@ -374,7 +383,7 @@ impl Datas {
                 // We can't guarantee the queue item has the correct platform id,
                 // as it might be a new queue item. So we grab it early from any
                 // Data::Meta in the array.
-                let meta = &self.get_meta();
+                let meta = Datas::get_meta(&self.data);
                 let mut platform_id: Option<String> = None;
                 if let Some(meta) = meta {
                     platform_id = match meta {
@@ -413,7 +422,7 @@ impl Datas {
                     }
                 }
 
-                let (platform_id, platform, added_by, username) = self.get_info();
+                let (platform_id, platform, added_by, username) = Datas::get_info(&self.data);
 
                 queue::process(&queue_id, platform_id, platform, added_by, username, db).await;
 

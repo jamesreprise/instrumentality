@@ -20,57 +20,17 @@
 #[macro_use]
 extern crate rocket;
 
-use crate::routes::add::*;
-use crate::routes::catchers::*;
-use crate::routes::create::*;
-use crate::routes::delete::*;
-use crate::routes::invite::*;
-use crate::routes::login::*;
-use crate::routes::queue::*;
-use crate::routes::register::*;
-use crate::routes::types::*;
-use crate::routes::update::*;
-use crate::routes::view::*;
+pub mod config;
+pub mod data;
+pub mod group;
+pub mod key;
+pub mod mdb;
+pub mod routes;
+pub mod server;
+pub mod subject;
+pub mod user;
 
-use rocket::fairing::AdHoc;
-use rocket::figment::{
-    providers::{Format, Toml},
-    Figment,
-};
-use rocket::fs::{relative, FileServer};
-
-mod config;
-mod data;
-mod group;
-mod key;
-mod mdb;
-mod routes;
-mod subject;
-mod user;
-
-#[launch]
-async fn rocket() -> _ {
-    let figment =
-        Figment::from(rocket::Config::default()).merge(Toml::file("Rocket.toml").nested());
-    let iconfig = config::open().unwrap();
-    let database = mdb::open(&iconfig).await.unwrap();
-    rocket::custom(figment)
-        .mount("/", routes![register])
-        .mount("/", routes![invite])
-        .mount("/", routes![login])
-        .mount("/", routes![types])
-        .mount("/", routes![add])
-        .mount("/", routes![view])
-        .mount("/", routes![queue])
-        .mount("/", routes![create])
-        .mount("/", routes![delete])
-        .mount("/", routes![update])
-        .mount("/", FileServer::from(relative!("files")))
-        .register("/", catchers![default_err])
-        .attach(AdHoc::on_ignite("Config", |rocket| async move {
-            rocket.manage(iconfig)
-        }))
-        .attach(AdHoc::on_ignite("MongoDB", |rocket| async move {
-            rocket.manage(database)
-        }))
+#[rocket::main]
+async fn main() -> Result<(), rocket::Error> {
+    server::build_rocket().await.launch().await
 }

@@ -44,6 +44,6 @@ pub async fn add(
         data_coll.insert_many(data.data, None).await.unwrap();
         json!({ "response" : "OK"})
     } else {
-        json!({ "response" : "ERROR", "text": "No valid data was submitted."})
+        json!({ "response" : "ERROR", "text": "No valid data was submitted. Ensure the given platforms and content/presence types are supported by this server. Ensure all data was correctly labeled for queue jobs."})
     }
 }

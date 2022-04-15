@@ -4,40 +4,10 @@
 //!
 //! View is a type of search on the data held in the system.
 //! The most typical search will be looking up recent posts on all platforms
-//! for a specific subject/group/profile. That search would look something like:
+//! for a specific subject/group/profile.
 //!
-//! ```
-//! /view?subjects=[user1,user2]&platforms=[twitter,instagram]
-//! ```
-
 //! We can think of a search as a series of scope 'broadeners' and 'narrowers'.
 //! Currently, every subject is a 'broadener', every other parameter is a 'narrower'.
-
-//! Ideal output structure:
-//! ```json
-//! {
-//!     response: OK
-//!     subjects:
-//!         <uuid>:
-//!             platforms:
-//!                 <platform1>:
-//!                     meta:
-//!                         x
-//!                         y
-//!                         z
-//!                     content:
-//!                         a
-//!                         b
-//!                         c
-//!                     presence:
-//!                         d
-//!                         e
-//!                         f
-//!                 <platform2>:
-//!                     meta:
-//!                         ...
-//! }
-//! ```
 
 use crate::data::*;
 use crate::key::Key;
