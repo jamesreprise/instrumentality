@@ -119,9 +119,10 @@
 
 use crate::config::IConfig;
 use crate::routes::queue;
+use crate::routes::queue::InternalQueueItem;
 
 use chrono::{DateTime, Utc};
-use mongodb::Database;
+use mongodb::{bson::doc, Collection, Database};
 use rocket::State;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -136,7 +137,6 @@ pub enum Data {
         retrieved_at: DateTime<Utc>,
         added_by: Option<String>,
         added_at: Option<DateTime<Utc>>,
-        queue_id: Option<String>,
     },
     Content {
         id: String,
@@ -152,7 +152,6 @@ pub enum Data {
         references: Option<HashMap<String, String>>,
         added_by: Option<String>,
         added_at: Option<DateTime<Utc>>,
-        queue_id: Option<String>,
     },
     Meta {
         id: String,
@@ -169,7 +168,6 @@ pub enum Data {
         retrieved_at: Option<DateTime<Utc>>,
         added_by: Option<String>,
         added_at: Option<DateTime<Utc>>,
-        queue_id: Option<String>,
     },
 }
 
@@ -210,14 +208,12 @@ impl Data {
                 platform,
                 presence_type,
                 retrieved_at,
-                queue_id,
                 ..
             } => Self::Presence {
                 id,
                 platform,
                 presence_type,
                 retrieved_at,
-                queue_id,
                 added_by: Some(uuid),
                 added_at: Some(Utc::now()),
             },
@@ -233,7 +229,6 @@ impl Data {
                 body,
                 media,
                 references,
-                queue_id,
                 ..
             } => Self::Content {
                 id,
@@ -247,7 +242,6 @@ impl Data {
                 body,
                 media,
                 references,
-                queue_id,
                 added_by: Some(uuid),
                 added_at: Some(Utc::now()),
             },
@@ -264,7 +258,6 @@ impl Data {
                 references,
                 link,
                 retrieved_at,
-                queue_id,
                 ..
             } => Self::Meta {
                 id,
@@ -279,48 +272,9 @@ impl Data {
                 references,
                 link,
                 retrieved_at,
-                queue_id,
                 added_by: Some(uuid),
                 added_at: Some(Utc::now()),
             },
-        }
-    }
-
-    // We need to process queue jobs.
-    pub async fn process_queue(self: &Self, db: &State<Database>) -> bool {
-        match self {
-            Self::Content {
-                queue_id,
-                id,
-                platform,
-                added_by,
-                ..
-            } => queue::process(queue_id, id, platform, added_by, None, db).await,
-            Self::Presence {
-                queue_id,
-                id,
-                platform,
-                added_by,
-                ..
-            } => queue::process(queue_id, id, platform, added_by, None, db).await,
-            Self::Meta {
-                queue_id,
-                id,
-                username,
-                platform,
-                added_by,
-                ..
-            } => {
-                queue::process(
-                    queue_id,
-                    id,
-                    platform,
-                    added_by,
-                    Some(username.to_string()),
-                    db,
-                )
-                .await
-            }
         }
     }
 }
@@ -328,6 +282,7 @@ impl Data {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Datas {
     pub data: Vec<Data>,
+    pub queue_id: Option<String>,
 }
 
 impl Datas {
@@ -340,6 +295,7 @@ impl Datas {
         }
         Self {
             data: verified_data,
+            queue_id: self.queue_id,
         }
     }
 
@@ -348,18 +304,125 @@ impl Datas {
         for d in self.data {
             tagged_data.push(d.tag(uuid.clone()))
         }
-        Self { data: tagged_data }
+        Self {
+            data: tagged_data,
+            queue_id: self.queue_id,
+        }
+    }
+
+    pub fn get_meta(self: &Self) -> Option<&Data> {
+        for d in &self.data {
+            match d {
+                Data::Meta { .. } => return Some(d),
+                _ => (),
+            };
+        }
+        None
+    }
+
+    pub fn get_data(self: &Self) -> &Data {
+        return &self.data[0];
+    }
+
+    pub fn get_info(self: &Self) -> (&String, &String, &Option<String>, Option<&String>) {
+        let meta = self.get_meta();
+        if meta.is_some() {
+            let meta = meta.unwrap();
+            let (platform_id, platform, added_by, username) = match meta {
+                Data::Meta {
+                    id,
+                    platform,
+                    added_by,
+                    username,
+                    ..
+                } => (id, platform, added_by, Some(username)),
+                _ => panic!("Expected Data::Meta."),
+            };
+            return (platform_id, platform, added_by, username);
+        } else {
+            let data = self.get_data();
+            let (platform_id, platform, added_by) = match data {
+                Data::Presence {
+                    id,
+                    platform,
+                    added_by,
+                    ..
+                } => (id, platform, added_by),
+                Data::Content {
+                    id,
+                    platform,
+                    added_by,
+                    ..
+                } => (id, platform, added_by),
+                _ => panic!("Expected Presence or Content."),
+            };
+            return (platform_id, platform, added_by, None);
+        }
     }
 
     pub async fn process_queue(self: Self, db: &State<Database>) -> Self {
-        let mut processed_data = Vec::new();
-        for d in self.data {
-            if d.process_queue(db).await {
-                processed_data.push(d);
+        if !self.data.is_empty() && self.queue_id.is_some() {
+            let mut processed_data = Vec::new();
+            let queue_id = self.queue_id.clone().unwrap();
+            let q_coll: Collection<InternalQueueItem> = db.collection("queue");
+            let q_item = q_coll
+                .find_one(doc! { "queue_id": &queue_id }, None)
+                .await
+                .unwrap();
+            if q_item.is_some() {
+                let q_item = q_item.unwrap();
+                // We can't guarantee the queue item has the correct platform id,
+                // as it might be a new queue item. So we grab it early from any
+                // Data::Meta in the array.
+                let meta = &self.get_meta();
+                let mut platform_id: Option<String> = None;
+                if let Some(meta) = meta {
+                    platform_id = match meta {
+                        Data::Meta { id, .. } => Some(id.to_string()),
+                        _ => panic!("Expected Data::Meta."),
+                    };
+                }
+
+                // We verify that all data in the array is pertinent to this job.
+                for d in &self.data {
+                    let verified: bool = match &d {
+                        Data::Meta { platform, id, .. } => {
+                            if let Some(platform_id) = platform_id.clone() {
+                                &platform_id == id && &q_item.platform == platform
+                            } else {
+                                &q_item.platform == platform
+                            }
+                        }
+                        Data::Content { platform, id, .. } => {
+                            if let Some(platform_id) = platform_id.clone() {
+                                &platform_id == id && &q_item.platform == platform
+                            } else {
+                                &q_item.platform == platform
+                            }
+                        }
+                        Data::Presence { platform, id, .. } => {
+                            if let Some(platform_id) = platform_id.clone() {
+                                &platform_id == id && &q_item.platform == platform
+                            } else {
+                                &q_item.platform == platform
+                            }
+                        }
+                    };
+                    if verified {
+                        processed_data.push(d.clone());
+                    }
+                }
+
+                let (platform_id, platform, added_by, username) = self.get_info();
+
+                queue::process(&queue_id, platform_id, platform, added_by, username, db).await;
+
+                return Self {
+                    data: processed_data,
+                    queue_id: Some(queue_id.clone()),
+                };
             }
         }
-        Self {
-            data: processed_data,
-        }
+        return self;
     }
 }

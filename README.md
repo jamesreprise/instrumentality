@@ -37,7 +37,6 @@ Subject/Group Management Routes:
     >> (create) POST /create
     >> (delete) POST /delete
     >> (update) POST /update
-
 ```
 All POST requests only accept JSON. Every route except types requires an API key in the headers as `X-API-KEY`. 
 See the documentation for each route for examples on how to use them.
@@ -60,16 +59,16 @@ This server is a backend and intentionally only returns JSON.
 - [x] /create, /update, /delete
 - [x] /view.
 - [x] Automatic deploying of MongoDB indexes.
-- [~] /queue.
+- [x] /queue.
 
 ### Future
 #### Minor
+- [ ] Better /queue.
 - [ ] Live config reloading.
 - [ ] /leaderboard.
 - [ ] Channels & webhooks
 
 #### Major
-- [ ] Dataset merging.
 - [ ] Handling discrepencies/byzantine platforms through consensus.
 - [ ] Sharded database.
 - [ ] Admin tooling.

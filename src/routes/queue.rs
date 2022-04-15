@@ -78,13 +78,13 @@ use serde_json::json;
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
-struct InternalQueueItem {
-    queue_id: String, // Queue ID.
-    platform_id: String,
-    platform: String,
-    last_processed: DateTime<Utc>,
-    lock_holder: Option<String>, // None means not locked.
-    lock_acquired_at: Option<DateTime<Utc>>,
+pub struct InternalQueueItem {
+    pub queue_id: String, // Queue ID.
+    pub platform_id: String,
+    pub platform: String,
+    pub last_processed: DateTime<Utc>,
+    pub lock_holder: Option<String>, // None means not locked.
+    pub lock_acquired_at: Option<DateTime<Utc>>,
 }
 
 impl InternalQueueItem {
@@ -137,65 +137,59 @@ pub async fn queue(platforms: Vec<String>, db: &State<Database>, key: Key) -> Va
 }
 
 pub async fn process(
-    queue_id: &Option<String>,
+    queue_id: &String,
     id: &String,
     platform: &String,
     added_by: &Option<String>,
-    username: Option<String>,
+    username: Option<&String>,
     db: &State<Database>,
 ) -> bool {
-    // If the data is part of a queue job...
-    if let Some(queue_id) = queue_id {
-        let added_by = added_by.as_ref().unwrap();
-        let q_coll: Collection<InternalQueueItem> = db.collection("queue");
-        // If this is a metadata update...
-        if let Some(username) = username {
-            let find_result = q_coll
-            .find_one(
-                // It's possible we haven't found an ID for this user yet.
-                doc! { "queue_id" : queue_id, "platform": platform, "platform_id": &username, "lock_holder": added_by },
-                None,
-            )
-            .await
-            .unwrap();
-            // and if so...
-            if let Some(_) = find_result {
-                let _q_update_result = q_coll
-                    .update_one(
-                        doc! { "queue_id" : queue_id, "lock_holder": added_by },
-                        // Update the queue item to use the platform ID instead of a username.
-                        doc! { "$set": { "platform_id": id } },
-                        None,
-                    )
-                    .await
-                    .unwrap();
-                // and update the subject to use the platform ID instead of a username.
-                let subj_coll: Collection<InternalQueueItem> = db.collection("subjects");
-                let platform_query_string = format!("profiles.{}", platform);
-                let platform_set_string = format!("profiles.{}.$", platform);
-                let _subj_update_result = subj_coll
-                    .update_one(
-                        doc! { &platform_query_string: &username },
-                        doc! { "$set": {&platform_set_string: id} },
-                        None,
-                    )
-                    .await
-                    .unwrap();
-            }
+    let added_by = added_by.as_ref().unwrap();
+    let q_coll: Collection<InternalQueueItem> = db.collection("queue");
+    // If this is a metadata update...
+    if let Some(username) = username {
+        let find_result = q_coll
+        .find_one(
+            // It's possible we haven't found an ID for this user yet.
+            doc! { "queue_id" : queue_id, "platform": platform, "platform_id": &username, "lock_holder": added_by },
+            None,
+        )
+        .await
+        .unwrap();
+        // and if so...
+        if let Some(_) = find_result {
+            let _q_update_result = q_coll
+                .update_one(
+                    doc! { "queue_id" : queue_id, "lock_holder": added_by },
+                    // Update the queue item to use the platform ID instead of a username.
+                    doc! { "$set": { "platform_id": id } },
+                    None,
+                )
+                .await
+                .unwrap();
+            // and update the subject to use the platform ID instead of a username.
+            let subj_coll: Collection<InternalQueueItem> = db.collection("subjects");
+            let platform_query_string = format!("profiles.{}", platform);
+            let platform_set_string = format!("profiles.{}.$", platform);
+            let _subj_update_result = subj_coll
+                .update_one(
+                    doc! { &platform_query_string: &username },
+                    doc! { "$set": {&platform_set_string: id} },
+                    None,
+                )
+                .await
+                .unwrap();
         }
-        let q_update_result = q_coll
-            .update_one(
-                doc! { "queue_id" : queue_id, "lock_holder": added_by },
-                doc! { "$set": {"lock_holder": Bson::Null, "lock_acquired_at": Bson::Null, "last_processed": Utc::now().to_string() } },
-                None,
-            )
-            .await
-            .unwrap();
-        q_update_result.modified_count == 1
-    } else {
-        // If the job doesn't contain a queue ID, it passes queue processing.
-        true
     }
+    let q_update_result = q_coll
+        .update_one(
+            doc! { "queue_id" : queue_id, "lock_holder": added_by },
+            doc! { "$set": {"lock_holder": Bson::Null, "lock_acquired_at": Bson::Null, "last_processed": Utc::now().to_string() } },
+            None,
+        )
+        .await
+        .unwrap();
+    q_update_result.modified_count == 1
 }
 
 pub async fn add_queue_item(
