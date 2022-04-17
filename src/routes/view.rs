@@ -88,7 +88,7 @@ pub async fn view(subjects: Vec<String>, db: &State<Database>, _key: Key) -> Val
     let data_coll: Collection<Data> = db.collection("data");
     let filter_builder = FindOptions::builder()
         .limit(100)
-        .sort(doc! {"retrieved_at": -1 as i32})
+        .sort(doc! {"retrieved_at": -1_i32})
         .batch_size(100);
     let filter = filter_builder.build();
 

@@ -13,26 +13,29 @@ use uuid::Uuid;
 #[derive(Debug, Deserialize, Serialize)]
 pub struct User {
     pub uuid: String,
-    pub user: String,
+    pub name: String,
     pub key: String,
     pub banned: bool,
 }
 
 impl User {
-    pub fn new(user: &str) -> Self {
+    pub fn new(name: &str) -> Self {
+        Self {
+            uuid: Uuid::new_v4().to_string(),
+            name: name.to_string(),
+            key: Self::new_key(),
+            banned: false,
+        }
+    }
+
+    pub fn new_key() -> String {
         let key_bytes: &mut [u8] = &mut [0; 32];
         getrandom::getrandom(key_bytes).unwrap();
         let mut key = String::new();
         for b in key_bytes {
-            write!(&mut key, "{}", format!("{:X?}", b)).unwrap();
+            write!(&mut key, "{:0>2X}", b).unwrap();
         }
-
-        User {
-            uuid: Uuid::new_v4().to_string(),
-            user: user.to_string(),
-            key,
-            banned: false,
-        }
+        key
     }
 
     pub async fn user_with_key(key: &str, database: &State<Database>) -> Option<User> {
@@ -41,7 +44,7 @@ impl User {
         result
     }
 
-    pub async fn subjects(self: &Self, database: &State<Database>) -> Option<Vec<Subject>> {
+    pub async fn subjects(&self, database: &State<Database>) -> Option<Vec<Subject>> {
         let subj_coll: Collection<Subject> = database.collection("subjects");
         let cursor: Cursor<Subject> = subj_coll
             .find(doc! {"created_by": &self.uuid}, None)
@@ -50,14 +53,14 @@ impl User {
 
         let results: Vec<Result<Subject, mongodb::error::Error>> = cursor.collect().await;
         let subjects: Vec<Subject> = results.into_iter().map(|d| d.unwrap()).collect();
-        if subjects.len() == 0 {
+        if subjects.is_empty() {
             None
         } else {
             Some(subjects)
         }
     }
 
-    pub async fn groups(self: &Self, database: &State<Database>) -> Option<Vec<Group>> {
+    pub async fn groups(&self, database: &State<Database>) -> Option<Vec<Group>> {
         let group_coll: Collection<Group> = database.collection("groups");
         let cursor: Cursor<Group> = group_coll
             .find(doc! {"created_by": &self.uuid}, None)
@@ -66,10 +69,31 @@ impl User {
 
         let results: Vec<Result<Group, mongodb::error::Error>> = cursor.collect().await;
         let groups: Vec<Group> = results.into_iter().map(|d| d.unwrap()).collect();
-        if groups.len() == 0 {
+        if groups.is_empty() {
             None
         } else {
             Some(groups)
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn test_new_user() {
+        let user = User::new("test");
+
+        assert!(!user.banned);
+        assert_eq!(user.name, "test");
+    }
+
+    #[test]
+    fn test_key() {
+        let user = User::new("test");
+        let re = regex::Regex::new(r"^([A-F0-9])*$").unwrap();
+
+        assert_eq!(user.key.len(), 64);
+        assert!(re.is_match(&user.key));
     }
 }

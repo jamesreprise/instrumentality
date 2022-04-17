@@ -14,6 +14,9 @@ getrandom = "0.2.4"
 uuid = "0.8.2"
 tokio-stream = "0.1.8"
 
+[dev-dependencies]
+regex = "1.5.5"
+
 [[bin]]
 name = "instrumentality"
 

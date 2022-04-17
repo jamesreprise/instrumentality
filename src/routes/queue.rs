@@ -106,10 +106,10 @@ pub async fn queue(platforms: Vec<String>, db: &State<Database>, key: Key) -> Va
         json!({ "response": "ERROR", "text": "You must specify which platforms you can do jobs for."})
     } else {
         // This is not optimal for performance. Should be running as a scheduled task in a thread.
-        clear_old_locks(&db).await;
+        clear_old_locks(db).await;
 
         let filter_builder =
-            FindOneAndUpdateOptions::builder().sort(doc! {"last_processed": -1 as i32});
+            FindOneAndUpdateOptions::builder().sort(doc! {"last_processed": -1_i32});
 
         let filter = filter_builder.build();
 
@@ -143,9 +143,9 @@ pub async fn queue(platforms: Vec<String>, db: &State<Database>, key: Key) -> Va
 // - Does the queue item contain a username instead of a platform id?
 // -
 pub async fn process(
-    queue_id: &String,
-    id: &String,
-    platform: &String,
+    queue_id: &str,
+    id: &str,
+    platform: &str,
     added_by: &Option<String>,
     username: Option<&String>,
     db: &State<Database>,
@@ -163,7 +163,7 @@ pub async fn process(
         .await
         .unwrap();
         // and if so...
-        if let Some(_) = find_result {
+        if find_result.is_some() {
             let _q_update_result = q_coll
                 .update_one(
                     doc! { "queue_id" : queue_id, "lock_holder": added_by },
@@ -199,19 +199,19 @@ pub async fn process(
 }
 
 pub async fn add_queue_item(
-    platform_id: &String,
-    platform: &String,
+    platform_id: &str,
+    platform: &str,
     db: &State<Database>,
 ) -> Result<InsertOneResult, mongodb::error::Error> {
     let q_coll: Collection<InternalQueueItem> = db.collection("queue");
     let queue_item: InternalQueueItem =
-        InternalQueueItem::new(platform_id.clone(), platform.clone());
+        InternalQueueItem::new(platform_id.to_string(), platform.to_string());
     Ok(q_coll.insert_one(queue_item, None).await.unwrap())
 }
 
 pub async fn remove_queue_item(
-    platform_id: &String,
-    platform: &String,
+    platform_id: &str,
+    platform: &str,
     db: &State<Database>,
 ) -> Result<DeleteResult, mongodb::error::Error> {
     let q_coll: Collection<InternalQueueItem> = db.collection("queue");
@@ -237,13 +237,9 @@ pub async fn clear_old_locks(db: &State<Database>) {
         .unwrap();
 }
 
-pub async fn get_username(platform_id: &String, platform: &String, db: &State<Database>) -> String {
-    async fn from_meta(
-        platform_id: &String,
-        platform: &String,
-        db: &State<Database>,
-    ) -> Option<String> {
-        let filter_builder = FindOneOptions::builder().projection(doc! {"username": 1 as i32});
+pub async fn get_username(platform_id: &str, platform: &str, db: &State<Database>) -> String {
+    async fn from_meta(platform_id: &str, platform: &str, db: &State<Database>) -> Option<String> {
+        let filter_builder = FindOneOptions::builder().projection(doc! {"username": 1_u32});
 
         let filter = filter_builder.build();
 
@@ -268,5 +264,5 @@ pub async fn get_username(platform_id: &String, platform: &String, db: &State<Da
 
     from_meta(platform_id, platform, db)
         .await
-        .unwrap_or(platform_id.to_string())
+        .unwrap_or_else(|| platform_id.to_string())
 }

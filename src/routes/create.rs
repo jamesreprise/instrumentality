@@ -46,7 +46,7 @@ pub async fn create(data: Json<CreateData>, db: &State<Database>, key: Key) -> V
 async fn create_subject(data: CreateData, db: &State<Database>, key: Key) -> Value {
     let subj_coll: Collection<Subject> = db.collection("subjects");
     if let Some(subject) = Subject::from_subject_create(data, db, key).await {
-        if let Ok(_) = subj_coll.insert_one(&subject, None).await {
+        if subj_coll.insert_one(&subject, None).await.is_ok() {
             for platform in subject.profiles.keys() {
                 for id in subject.profiles.get(platform).unwrap() {
                     queue::add_queue_item(id, platform, db).await.unwrap();
@@ -67,11 +67,11 @@ async fn create_group(data: CreateData, db: &State<Database>, key: Key) -> Value
         for s in &group.subjects {
             let subj_coll: Collection<Subject> = db.collection("subjects");
             let subject = subj_coll.find_one(doc! {"uuid": s}, None).await.unwrap();
-            if let None = subject {
+            if subject.is_none() {
                 return json!({ "response" : "ERROR", "text": "One or more of the subjects was not valid."});
             }
         }
-        if let Ok(_) = group_coll.insert_one(&group, None).await {
+        if group_coll.insert_one(&group, None).await.is_ok() {
             json!({ "response" : "OK", "group": &group})
         } else {
             json!({ "response" : "ERROR", "text": "Group by that name already exists."})

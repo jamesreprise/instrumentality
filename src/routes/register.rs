@@ -14,7 +14,7 @@
 //!
 //! TODO: This isn't atomic and so race conditions are present.
 
-use crate::routes::invite::RefEntry;
+use crate::routes::invite::Referral;
 use crate::user::User;
 
 use mongodb::Collection;
@@ -28,7 +28,7 @@ use serde_json::json;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RegisterRequest {
     ref_code: String,
-    user: String,
+    name: String,
 }
 
 #[derive(Debug)]
@@ -50,7 +50,7 @@ pub async fn register(req: Json<RegisterRequest>, db: &State<Database>) -> Value
 }
 
 async fn invite_valid(req: &Json<RegisterRequest>, db: &State<Database>) -> bool {
-    let refs_coll: Collection<RefEntry> = db.collection("referrals");
+    let refs_coll: Collection<Referral> = db.collection("referrals");
     let result = refs_coll
         .find_one(
             doc! {"ref_code": req.ref_code.as_str(), "used" : false},
@@ -63,7 +63,7 @@ async fn invite_valid(req: &Json<RegisterRequest>, db: &State<Database>) -> bool
 async fn username_not_taken(req: &Json<RegisterRequest>, db: &State<Database>) -> bool {
     let users_coll: Collection<User> = db.collection("users");
     let result = users_coll
-        .find_one(doc! {"user": req.user.as_str()}, None)
+        .find_one(doc! {"user": req.name.as_str()}, None)
         .await;
     matches!(result, Ok(None))
 }
@@ -72,7 +72,7 @@ async fn register_user(
     req: &Json<RegisterRequest>,
     db: &State<Database>,
 ) -> Result<User, RegisterError> {
-    let user = User::new(&req.user);
+    let user = User::new(&req.name);
     let result = use_invite(&user, req, db).await;
     if result.is_ok() {
         let users_coll: Collection<User> = db.collection("users");
@@ -91,8 +91,8 @@ async fn use_invite(
     user: &User,
     req: &Json<RegisterRequest>,
     db: &State<Database>,
-) -> Result<RefEntry, RegisterError> {
-    let refs_coll: Collection<RefEntry> = db.collection("referrals");
+) -> Result<Referral, RegisterError> {
+    let refs_coll: Collection<Referral> = db.collection("referrals");
     let result = refs_coll
         .find_one_and_update(
             doc! {"ref_code": req.ref_code.as_str(), "used": false},

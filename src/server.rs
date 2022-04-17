@@ -23,10 +23,10 @@ use rocket::figment::{
 };
 use rocket::fs::{relative, FileServer};
 
-pub async fn build_rocket() -> rocket::Rocket<Ignite> {
+pub async fn build_rocket(config_path: &str) -> rocket::Rocket<Ignite> {
     let figment =
         Figment::from(rocket::Config::default()).merge(Toml::file("Rocket.toml").nested());
-    let iconfig = config::open().unwrap();
+    let iconfig = config::open(config_path).unwrap();
     let database = mdb::open(&iconfig).await.unwrap();
     rocket::custom(figment)
         .mount(

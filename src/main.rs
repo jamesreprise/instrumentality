@@ -32,5 +32,8 @@ pub mod user;
 
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
-    server::build_rocket().await.launch().await
+    server::build_rocket("Instrumentality.toml")
+        .await
+        .launch()
+        .await
 }

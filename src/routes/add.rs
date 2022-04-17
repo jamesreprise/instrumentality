@@ -40,7 +40,7 @@ pub async fn add(
     // is a union of the two. We should only ever be turning Option::None
     // into Option::Some(T) in this case.
     // Additionally, deleted can become true.
-    if data.data.len() != 0 {
+    if !data.data.is_empty() {
         data_coll.insert_many(data.data, None).await.unwrap();
         json!({ "response" : "OK"})
     } else {

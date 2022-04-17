@@ -19,9 +19,9 @@ pub struct MDBIConfig {
     pub database: String,
 }
 
-pub fn open() -> Result<IConfig, Box<dyn std::error::Error>> {
-    let config_str = &std::fs::read_to_string("Instrumentality.toml")
-        .expect("Couldn't read Instrumentality.toml");
+pub fn open(config_path: &str) -> Result<IConfig, Box<dyn std::error::Error>> {
+    let config_str = &std::fs::read_to_string(config_path)
+        .unwrap_or_else(|_| panic!("Couldn't read configuration file {}.", config_path));
 
     let config: IConfig = toml::from_str(config_str)?;
     Ok(config)

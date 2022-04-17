@@ -43,12 +43,34 @@ use std::fmt::Write;
 pub struct InviteError;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct RefEntry {
+pub struct Referral {
     created_by: String,
     created_at: DateTime<Utc>,
-    ref_code: String,
+    code: String,
     used: bool,
     used_by: Option<String>,
+}
+
+impl Referral {
+    pub fn new(created_by: String) -> Self {
+        Self {
+            created_by,
+            created_at: Utc::now(),
+            code: Self::new_code(),
+            used: false,
+            used_by: None,
+        }
+    }
+
+    pub fn new_code() -> String {
+        let refcode_bytes: &mut [u8] = &mut [0; 64];
+        getrandom::getrandom(refcode_bytes).unwrap();
+        let mut code = String::new();
+        for b in refcode_bytes {
+            write!(&mut code, "{:0>2X}", b).unwrap();
+        }
+        code
+    }
 }
 
 #[get("/invite", rank = 1)]
@@ -57,27 +79,38 @@ pub async fn invite(key: Key, db: &State<Database>) -> Value {
 }
 
 async fn create_invite(key: Key, db: &State<Database>) -> Result<Value, InviteError> {
-    let refer_coll: Collection<RefEntry> = db.collection("referrals");
-    let refcode_bytes: &mut [u8] = &mut [0; 64];
-    getrandom::getrandom(refcode_bytes).unwrap();
-    let mut ref_code = String::new();
-    for b in refcode_bytes {
-        write!(&mut ref_code, "{}", format!("{:X?}", b)).unwrap();
-    }
+    let code = Referral::new_code();
 
+    let refer_coll: Collection<Referral> = db.collection("referrals");
     refer_coll
         .insert_one(
-            &RefEntry {
-                created_by: User::user_with_key(&key.key, db).await.unwrap().uuid,
-                created_at: Utc::now(),
-                ref_code: ref_code.clone(),
-                used: false,
-                used_by: None,
-            },
+            Referral::new(User::user_with_key(&key.key, db).await.unwrap().uuid),
             None,
         )
         .await
         .unwrap();
 
-    Ok(json!({"response": "OK", "ref_code": ref_code}))
+    Ok(json!({"response": "OK", "code": &code}))
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn test_new_invite() {
+        let referral = Referral::new("test".to_string());
+
+        assert!(!referral.used);
+        assert_eq!(referral.created_by, "test");
+        assert_eq!(referral.used_by, None);
+    }
+
+    #[test]
+    fn test_code() {
+        let referral = Referral::new("test".to_string());
+
+        let re = regex::Regex::new(r"^([A-F0-9])*$").unwrap();
+        assert_eq!(referral.code.len(), 128);
+        assert!(re.is_match(&referral.code));
+    }
 }

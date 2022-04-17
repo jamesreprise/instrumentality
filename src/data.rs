@@ -178,7 +178,7 @@ pub enum Data {
 }
 
 impl Data {
-    pub fn verify(self: &Self, config: &IConfig) -> bool {
+    pub fn verify(&self, config: &IConfig) -> bool {
         match self {
             Self::Presence {
                 platform,
@@ -207,7 +207,7 @@ impl Data {
 
     // I'm sure this can be cleaned up but I don't know how.
     // This is the debt to be paid for using an enum.
-    pub fn tag(self: Self, uuid: String) -> Self {
+    pub fn tag(self, uuid: String) -> Self {
         match self {
             Self::Presence {
                 id,
@@ -292,7 +292,7 @@ pub struct Datas {
 }
 
 impl Datas {
-    pub fn verify(self: Self, config: &IConfig) -> Self {
+    pub fn verify(self, config: &IConfig) -> Self {
         let mut verified_data = Vec::new();
         for d in self.data {
             if d.verify(config) {
@@ -305,7 +305,7 @@ impl Datas {
         }
     }
 
-    pub fn tag(self: Self, uuid: String) -> Self {
+    pub fn tag(self, uuid: String) -> Self {
         let mut tagged_data = Vec::new();
         for d in self.data {
             tagged_data.push(d.tag(uuid.clone()))
@@ -318,18 +318,16 @@ impl Datas {
 
     pub fn get_meta(datas: &Vec<Data>) -> Option<&Data> {
         for d in datas {
-            match d {
-                Data::Meta { .. } => return Some(d),
-                _ => (),
-            };
+            if let Data::Meta { .. } = d {
+                return Some(d);
+            }
         }
         None
     }
 
     pub fn get_info(datas: &Vec<Data>) -> (&String, &String, &Option<String>, Option<&String>) {
         let meta = Datas::get_meta(datas);
-        if meta.is_some() {
-            let meta = meta.unwrap();
+        if let Some(meta) = meta {
             let (platform_id, platform, added_by, username) = match meta {
                 Data::Meta {
                     id,
@@ -340,7 +338,7 @@ impl Datas {
                 } => (id, platform, added_by, Some(username)),
                 _ => panic!("Expected Data::Meta."),
             };
-            return (platform_id, platform, added_by, username);
+            (platform_id, platform, added_by, username)
         } else {
             let data = &datas[0];
             let (platform_id, platform, added_by) = match data {
@@ -358,7 +356,7 @@ impl Datas {
                 } => (id, platform, added_by),
                 _ => panic!("Expected Presence or Content."),
             };
-            return (platform_id, platform, added_by, None);
+            (platform_id, platform, added_by, None)
         }
     }
 
@@ -369,7 +367,7 @@ impl Datas {
     // - Does the queue item have a username attached or a platform id?
     // - Does all the data in self.data pertain to the queue job? If not filter it out.
     // Then get relevant data and pass it to the queue for processing.
-    pub async fn process_queue(self: Self, db: &State<Database>) -> Self {
+    pub async fn process_queue(self, db: &State<Database>) -> Self {
         if !self.data.is_empty() && self.queue_id.is_some() {
             let mut processed_data = Vec::new();
             let queue_id = self.queue_id.clone().unwrap();
@@ -432,6 +430,6 @@ impl Datas {
                 };
             }
         }
-        return self;
+        self
     }
 }

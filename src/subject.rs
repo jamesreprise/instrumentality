@@ -17,11 +17,7 @@ pub struct Subject {
     pub created_at: DateTime<Utc>,
     pub created_by: String,
     pub name: String,
-    pub profiles: HashMap<String, Vec<String>>, // e.g. "twitter" -> ["123", "456"]
-
-    // Subjects are generally people or organisations.
-    // It is outside of Instrumentality's scope to uniquely identify them in
-    // terms of the real world but you can add information that does that here.
+    pub profiles: HashMap<String, Vec<String>>,
     pub description: Option<String>,
 }
 

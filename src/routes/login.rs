@@ -22,8 +22,8 @@ pub async fn login(key: Key, database: &State<Database>) -> Value {
         {
             "response": "OK",
             "user": &user,
-            "subjects": &user.subjects(database).await.unwrap_or(Vec::new()),
-            "groups": &user.groups(database).await.unwrap_or(Vec::new()),
+            "subjects": &user.subjects(database).await.unwrap_or_default(),
+            "groups": &user.groups(database).await.unwrap_or_default(),
         }
     )
 }
