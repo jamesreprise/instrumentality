@@ -369,7 +369,7 @@ impl Datas {
     // Then get relevant data and pass it to the queue for processing.
     pub async fn process_queue(self, db: &State<Database>) -> Self {
         if !self.data.is_empty() && self.queue_id.is_some() {
-            let mut processed_data = Vec::new();
+            let mut verified_data = Vec::new();
             let queue_id = self.queue_id.clone().unwrap();
             let q_coll: Collection<InternalQueueItem> = db.collection("queue");
             let q_item = q_coll
@@ -416,17 +416,20 @@ impl Datas {
                         }
                     };
                     if verified {
-                        processed_data.push(d.clone());
+                        verified_data.push(d.clone());
                     }
                 }
 
-                let (platform_id, platform, added_by, username) = Datas::get_info(&self.data);
+                if !verified_data.is_empty() {
+                    let (platform_id, platform, added_by, username) =
+                        Datas::get_info(&verified_data);
 
-                queue::process(&queue_id, platform_id, platform, added_by, username, db).await;
+                    queue::process(&queue_id, platform_id, platform, added_by, username, db).await;
+                }
 
                 return Self {
-                    data: processed_data,
-                    queue_id: Some(queue_id.clone()),
+                    data: verified_data,
+                    queue_id: self.queue_id,
                 };
             }
         }
