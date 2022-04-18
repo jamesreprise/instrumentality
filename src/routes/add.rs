@@ -4,8 +4,11 @@
 //!
 //! All data to be added must be formatted as below.
 //! ```json
-//! {"data" : [..]}
+//! {"data": [..]}
 //! ```
+//! or if the data is for a queue job:
+//! ```json
+//! {"queue_id": <UUIDv4>, "data": [..]}
 //!
 //! See [`Data`] for examples of valid data objects.
 

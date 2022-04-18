@@ -5,23 +5,12 @@
 //! You request an invite for someone else by calling /invite with a valid
 //! API Key in your request headers under "x-api-key".
 //!
-//! A referral takes the form:
-//! ```json
-//! {
-//!     "created_by": String,
-//!     "created_at": DateTime<Utc>,
-//!     "ref_code": String,
-//!     "used": bool,
-//!     "used_by": Option<String>,
-//! }
-//! ```
-//!
 //! Below is an example referral:
 //! ```json
 //! {
 //!     "created_by": "72c34ca4-d540-46b2-8ae3-53b8988c023b",
 //!     "created_at": "2022-03-21T15:13:13Z",
-//!     "ref_code": "E3A2DD028183606CC894BB5C6B2CCC6F",
+//!     "code": "2FBFE4D99040DBDE144E6581CAFC5FE90DB79A7C625706D781FF5E161D843CFFEE842E3BA4E9C45E98FDA24FE489EDC21E452BEC47E0BC64B6E6176212C29F38",
 //!     "used": "false",
 //!     "used_by": "None",
 //! }

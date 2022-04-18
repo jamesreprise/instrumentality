@@ -4,6 +4,11 @@
 //!
 //! Whenever we encounter an error, we return the fact it is an error, its error code
 //! and potentially a reason using reason_lossy() from http::Status.
+//!
+//! Below is an example error response.
+//! ```json
+//! {"response": "ERROR", "error_code": 404, "text": "Not Found"}
+//! ```
 
 use rocket::http::Status;
 use rocket::serde::json::Value;

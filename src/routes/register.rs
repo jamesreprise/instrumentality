@@ -8,11 +8,9 @@
 //! ```json
 //! {
 //!     "ref_code": String,
-//!     "user": String,
+//!     "name": String,
 //! }
 //! ```
-//!
-//! TODO: This isn't atomic and so race conditions are present.
 
 use crate::routes::invite::Referral;
 use crate::user::User;
@@ -34,6 +32,8 @@ pub struct RegisterRequest {
 #[derive(Debug)]
 pub struct RegisterError;
 
+// Invites can't be double used but we are double requesting with every attempt
+// /register wrt invite_valid and use_invite.
 #[post("/register", format = "json", data = "<req>", rank = 1)]
 pub async fn register(req: Json<RegisterRequest>, db: &State<Database>) -> Value {
     if invite_valid(&req, db).await && username_not_taken(&req, db).await {

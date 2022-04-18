@@ -3,8 +3,40 @@
 //! The /create route is implemented here.
 //!
 //! ['Subject`]s and [`Group`]s are concepts that exist solely within
-//! Instrumentality unlike [`Profile`]s which the 'source of truth' exists
+//! Instrumentality unlike [`Profile`]s of which the 'source of truth' exists
 //! elsewhere.
+//!
+//! An example subject creation is given below:
+//! ```json
+//! {
+//!     "name": "Subject1",
+//!     "profiles":
+//!         {
+//!          "twitter": ["subject1", "subject1_private"],
+//!          "instagram": ["subject1pics"]
+//!         },
+//!     "description": "Everyone's favourite subject."
+//! }
+//! ```
+//! Which would yield the response:
+//! ```json
+//! {
+//!     "response": "OK",
+//!     "subject":
+//!         {
+//!          "uuid": "<UUIDv4>",
+//!          "created_by": "<creator's UUIDv4>"
+//!          "created_at": "<ISO8061 UTC TIME>"
+//!          "name": "Subject1",
+//!          "profiles":
+//!             {
+//!              "twitter": ["subject1", "subject1_private"],
+//!              "instagram": ["subject1pics"]
+//!             },
+//!          "description": "Everyone's favourite subject."
+//!         }
+//! }
+//! ```
 
 use crate::group::*;
 use crate::key::Key;

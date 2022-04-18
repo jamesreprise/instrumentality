@@ -29,6 +29,7 @@ Content Routes:
     >> (add) POST /add
     >> (view) GET /view?<subjects>
     >> (types) GET /types
+    >> (queue) GET /queue?<platforms>
 User Management Routes:
     >> (login) GET /login
     >> (invite) GET /invite

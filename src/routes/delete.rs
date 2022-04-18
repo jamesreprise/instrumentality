@@ -12,7 +12,13 @@
 //! A valid /delete request takes the form:
 //! ```json
 //! {
-//!     "uuid": UUID
+//!     "uuid": "<UUIDv4>"
+//! }
+//! ```
+//! Which would yield the response:
+//! ```json
+//! {
+//!     "response": "OK"
 //! }
 
 use crate::group::Group;
