@@ -103,10 +103,10 @@ async fn update_subject(data: &UpdateData, db: &State<Database>, key: &Key) -> V
             .collect();
 
         for (platform, id) in added_profiles {
-            queue::add_queue_item(id, platform, db).await.unwrap();
+            queue::add_queue_item(id, platform, db).await;
         }
         for (platform, id) in removed_profiles {
-            queue::remove_queue_item(id, platform, db).await.unwrap();
+            queue::remove_queue_item(id, platform, db).await;
         }
 
         subj_coll

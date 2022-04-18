@@ -23,14 +23,13 @@
 //!
 //! The only requirements of content are that it must have a subject, a content type
 //! and a time retrieved. For example,
-//! ```compile_fail
-//! # use instrumentality::data::Data;
-//! let tweet: Data = Data::Content {
-//!     id: "123456789",
-//!     platform: "twitter",
-//!     content_type: "tweet",
-//!     created_at: Utc.ymd(2038, 1, 19).and_hms(3, 14, 7),
-//!     body: "I love my epoch.",
+//! ```json
+//! {
+//!     "id": "123456789",
+//!     "platform": "twitter",
+//!     "content_type": "tweet",
+//!     "created_at": "2038-01-19T03:14:07Z",
+//!     "body": "I love my epoch.",
 //! };
 //! ```
 //! When handling URLs, we store the original URL of the content and have a separate media
@@ -52,27 +51,25 @@
 //! 'stories' are a common temporary post feature that exist on top a platforms 'bread
 //! and butter' content. In order to differentiate between content types on the same
 //! platform we tag them with a type. For example,
-//! ```compile_fail
-//! # use instrumentality::data::Data;
-//! let ig_post: Data = Data::Content {
-//!     id: "123456789",
-//!     platform: "instagram",
-//!     content_type: "post",
-//!     created_at: Utc.ymd(2022, 1, 1).and_hms(0, 0, 5),
-//!     body: "Happy new year!",
-//!     media: ["https://..."]
+//! ```json
+//! {
+//!     "id": "123456789",
+//!     "platform": "instagram",
+//!     "content_type": "post",
+//!     "created_at": "2022-01-01T00:00:05Z",
+//!     "body": "Happy new year!",
+//!     "media": ["https://..."]
 //! };
 //! ```
 //! and
-//! ```compile_fail
-//! # use instrumentality::data::Data;
-//! let ig_story: Data = Data::Content {
-//!     id: "123456789",
-//!     platform: "instagram",
-//!     content_type: "story",
-//!     created_at: Utc.ymd(2022, 1, 1).and_hms(0, 0, 5),
-//!     body: "Happy new year!",
-//!     media: ["https://..."]
+//! ```json
+//! {
+//!     "id": "123456789",
+//!     "platform": "instagram",
+//!     "content_type": "story",
+//!     "created_at": "2022-01-01T00:00:05Z",
+//!     "body": "Happy new year!",
+//!     "media": ["https://..."]
 //! };
 //! ```
 //! are distinct types of content that are still tied to the id '123456789' on 'instagram'.
@@ -105,14 +102,12 @@
 //! than content posts.
 //!
 //! For example,
-//! ```compile_fail
-//! # use instrumentality::data::Data;
-//! # use chrono::{DateTime, Utc, TimeZone};
-//! let twitch_live: Data = Data::Presence {
-//!     id: "123456789",
-//!     platform: "twitch",      
-//!     presence_type: "livestream",
-//!     retrieved_at: Utc.ymd(2022, 1, 1).and_hms(0, 0, 0),
+//! ```json
+//! {
+//!     "id": "123456789",
+//!     "platform": "twitch",      
+//!     "presence_type": "livestream",
+//!     "retrieved_at": "2022-01-01T00:00:00Z",
 //! };
 //! ```
 //!

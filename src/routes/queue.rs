@@ -62,13 +62,13 @@
 
 use crate::data::Data;
 use crate::key::Key;
+use crate::subject::Subject;
 use crate::user::User;
 
 use chrono::offset::TimeZone;
 use chrono::{DateTime, Duration, Utc};
 use mongodb::bson::Bson;
 use mongodb::options::{FindOneAndUpdateOptions, FindOneOptions};
-use mongodb::results::{DeleteResult, InsertOneResult};
 use mongodb::Collection;
 use mongodb::{bson::doc, Database};
 use rocket::serde::json::Value;
@@ -85,6 +85,7 @@ pub struct InternalQueueItem {
     pub last_processed: DateTime<Utc>,
     pub lock_holder: Option<String>, // None means not locked.
     pub lock_acquired_at: Option<DateTime<Utc>>,
+    pub references: u128,
 }
 
 impl InternalQueueItem {
@@ -96,6 +97,7 @@ impl InternalQueueItem {
             last_processed: Utc.ymd(1970, 1, 1).and_hms(0, 0, 1),
             lock_holder: None,
             lock_acquired_at: None,
+            references: 1,
         }
     }
 }
@@ -164,17 +166,14 @@ pub async fn process(
         .unwrap();
         // and if so...
         if find_result.is_some() {
-            let _q_update_result = q_coll
-                .update_one(
-                    doc! { "queue_id" : queue_id, "lock_holder": added_by },
-                    // Update the queue item to use the platform ID instead of a username.
-                    doc! { "$set": { "platform_id": id } },
-                    None,
-                )
-                .await
-                .unwrap();
+            // Remove the temporary username queue item...
+            remove_queue_item(&username, platform, db).await;
+            // and either merge the username with the already existing queue item
+            // with that name or create a new one with the platform id.
+            add_queue_item(id, platform, db).await;
+
             // and update the subject to use the platform ID instead of a username.
-            let subj_coll: Collection<InternalQueueItem> = db.collection("subjects");
+            let subj_coll: Collection<Subject> = db.collection("subjects");
             let platform_query_string = format!("profiles.{}", platform);
             let platform_set_string = format!("profiles.{}.$", platform);
             let _subj_update_result = subj_coll
@@ -198,30 +197,50 @@ pub async fn process(
     q_update_result.modified_count == 1
 }
 
-pub async fn add_queue_item(
-    platform_id: &str,
-    platform: &str,
-    db: &State<Database>,
-) -> Result<InsertOneResult, mongodb::error::Error> {
+pub async fn add_queue_item(platform_id: &str, platform: &str, db: &State<Database>) {
     let q_coll: Collection<InternalQueueItem> = db.collection("queue");
-    let queue_item: InternalQueueItem =
-        InternalQueueItem::new(platform_id.to_string(), platform.to_string());
-    Ok(q_coll.insert_one(queue_item, None).await.unwrap())
-}
-
-pub async fn remove_queue_item(
-    platform_id: &str,
-    platform: &str,
-    db: &State<Database>,
-) -> Result<DeleteResult, mongodb::error::Error> {
-    let q_coll: Collection<InternalQueueItem> = db.collection("queue");
-    Ok(q_coll
-        .delete_one(
+    let q_item = q_coll
+        .find_one(
             doc! { "platform_id": platform_id, "platform": platform },
             None,
         )
         .await
-        .unwrap())
+        .unwrap();
+    if q_item.is_some() {
+        q_coll
+            .update_one(
+                doc! { "platform_id": platform_id, "platform": platform },
+                doc! { "$inc": { "references": 1_u32 }},
+                None,
+            )
+            .await
+            .unwrap();
+    } else {
+        let q_item: InternalQueueItem =
+            InternalQueueItem::new(platform_id.to_string(), platform.to_string());
+        q_coll.insert_one(q_item, None).await.unwrap();
+    }
+}
+
+pub async fn remove_queue_item(platform_id: &str, platform: &str, db: &State<Database>) {
+    let q_coll: Collection<InternalQueueItem> = db.collection("queue");
+    let result = q_coll
+        .delete_one(
+            doc! { "platform_id": platform_id, "platform": platform, "references": 1 },
+            None,
+        )
+        .await
+        .unwrap();
+    if result.deleted_count == 0 {
+        q_coll
+            .update_one(
+                doc! { "platform_id": platform_id, "platform": platform },
+                doc! { "$inc": { "references": -1_i32 }},
+                None,
+            )
+            .await
+            .unwrap();
+    }
 }
 
 pub async fn clear_old_locks(db: &State<Database>) {

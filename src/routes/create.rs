@@ -81,7 +81,7 @@ async fn create_subject(data: CreateData, db: &State<Database>, key: Key) -> Val
         if subj_coll.insert_one(&subject, None).await.is_ok() {
             for platform in subject.profiles.keys() {
                 for id in subject.profiles.get(platform).unwrap() {
-                    queue::add_queue_item(id, platform, db).await.unwrap();
+                    queue::add_queue_item(id, platform, db).await;
                 }
             }
             json!({ "response" : "OK", "subject": &subject})

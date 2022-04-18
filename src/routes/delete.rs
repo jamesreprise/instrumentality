@@ -67,7 +67,7 @@ pub async fn delete(data: Json<DeleteData>, db: &State<Database>, key: Key) -> V
 
             for platform in subject.profiles.keys() {
                 for id in subject.profiles.get(platform).unwrap() {
-                    queue::remove_queue_item(id, platform, db).await.unwrap();
+                    queue::remove_queue_item(id, platform, db).await;
                 }
             }
 
