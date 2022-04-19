@@ -13,9 +13,22 @@
 use rocket::http::Status;
 use rocket::serde::json::Value;
 use rocket::Request;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ErrorResponse {
+    pub response: String,
+    pub error_code: u16,
+    pub text: String,
+}
 
 #[catch(default)]
 pub fn default_err(status: Status, _request: &Request) -> Value {
-    json!({"response": "ERROR", "error_code": status.code, "text": status.reason_lossy()})
+    let er = ErrorResponse {
+        response: "ERROR".to_string(),
+        error_code: status.code,
+        text: status.reason_lossy().to_string(),
+    };
+    json!({"response": er.response, "error_code": er.error_code, "text": er.text})
 }

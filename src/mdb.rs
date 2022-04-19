@@ -18,8 +18,8 @@ pub async fn open(config: &IConfig) -> Result<Database, Box<dyn std::error::Erro
     let mut mongo_options =
         ClientOptions::parse(format!("mongodb://{user}:{password}@{hosts}:{port}")).await?;
     mongo_options.connect_timeout = Some(Duration::new(1, 0));
-    mongo_options.heartbeat_freq = Some(Duration::new(3, 0));
-    mongo_options.server_selection_timeout = Some(Duration::new(5, 0));
+    mongo_options.heartbeat_freq = Some(Duration::new(1, 0));
+    mongo_options.server_selection_timeout = Some(Duration::new(1, 0));
     let mongo_client = Client::with_options(mongo_options).unwrap();
     let database = mongo_client.database(&database);
 
@@ -91,4 +91,8 @@ async fn unique_content_index(
         .collection::<Data>("data")
         .create_index(idx_model, None)
         .await
+}
+
+pub async fn drop_database(database: &Database) {
+    database.drop(None).await.unwrap();
 }

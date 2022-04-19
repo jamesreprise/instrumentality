@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Write;
 use uuid::Uuid;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Eq, PartialEq, Clone, Debug, Deserialize, Serialize)]
 pub struct User {
     pub uuid: String,
     pub name: String,
