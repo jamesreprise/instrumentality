@@ -1,5 +1,6 @@
 //! Always use `prepare_environment` unless you are certain of what you are
-//! doing.
+//! doing. Using it twice will not create another user. Use the given user
+//! to create an invite via /invite and register that user.
 //!
 //! `setup_client` starts instrumentality, which will connect to mongodb on
 //! startup and check if the user collection is empty (shorthand for is this

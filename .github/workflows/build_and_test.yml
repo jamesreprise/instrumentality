@@ -1,0 +1,74 @@
+name: Instrumentality Build & Test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Git Checkout
+      uses: actions/checkout@v3
+
+    - name: Rust Toolchain
+      uses: actions-rs/toolchain@v1
+      with: 
+        toolchain: stable
+        override: true
+        components: rustfmt
+
+    - name: Build
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+        args: --release
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Git Checkout
+      uses: actions/checkout@v3
+
+    - name: Start MongoDB
+      uses: supercharge/mongodb-github-action@1.7.0
+      with:
+        mongodb-username: instrumentality
+        mongodb-password: supercharge
+        mongodb-db: instrumentality-test
+        
+    # Not using environment variables.
+    - name: Config File Creation
+      run: |
+          touch InstrumentalityTest.toml
+          echo '[mongodb]
+           hosts = "127.0.0.1"
+           port = "27017"
+           user = "instrumentality"
+           password = "supercharge"
+           database = "instrumentality_test"
+           [content_types]
+           platform1 = ["blog", "video"]
+           [presence_types]
+           platform2 = ["livestream"]
+           ' >> InstrumentalityTest.toml
+
+    - name: Rust Toolchain
+      uses: actions-rs/toolchain@v1
+      with: 
+        toolchain: stable
+        override: true
+        components: rustfmt
+
+    - name: Test
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --verbose
+  
