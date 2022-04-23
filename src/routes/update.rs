@@ -103,7 +103,7 @@ async fn update_subject(data: &UpdateData, db: &State<Database>, key: &Key) -> V
             .collect();
 
         for (platform, id) in added_profiles {
-            queue::add_queue_item(id, platform, db).await;
+            queue::add_queue_item(id, platform, db, false).await;
         }
         for (platform, id) in removed_profiles {
             queue::remove_queue_item(id, platform, db).await;
@@ -117,9 +117,9 @@ async fn update_subject(data: &UpdateData, db: &State<Database>, key: &Key) -> V
             )
             .await
             .unwrap();
-        json!({ "response" : "OK"})
+        json!({"response" : "OK"})
     } else {
-        json!({ "response" : "ERROR", "text": "Subject does not exist or was not created by user with given key."})
+        json!({"response" : "ERROR", "text": "Subject does not exist or was not created by user with given key."})
     }
 }
 
@@ -147,8 +147,8 @@ async fn update_group(data: &UpdateData, db: &State<Database>, key: &Key) -> Val
             )
             .await
             .unwrap();
-        json!({ "response" : "OK"})
+        json!({"response" : "OK"})
     } else {
-        json!({ "response" : "ERROR", "text": "Group does not exist or was not created by user with given key."})
+        json!({"response" : "ERROR", "text": "Group does not exist or was not created by user with given key."})
     }
 }

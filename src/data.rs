@@ -368,7 +368,7 @@ impl Datas {
             let queue_id = self.queue_id.clone().unwrap();
             let q_coll: Collection<InternalQueueItem> = db.collection("queue");
             let q_item = q_coll
-                .find_one(doc! { "queue_id": &queue_id }, None)
+                .find_one(doc! {"queue_id": &queue_id }, None)
                 .await
                 .unwrap();
             if q_item.is_some() {

@@ -45,8 +45,8 @@ pub async fn add(
     // Additionally, deleted can become true.
     if !data.data.is_empty() {
         data_coll.insert_many(data.data, None).await.unwrap();
-        json!({ "response" : "OK"})
+        json!({"response" : "OK"})
     } else {
-        json!({ "response" : "ERROR", "text": "No valid data was submitted. Ensure the given platforms and content/presence types are supported by this server. Ensure all data was correctly labeled for queue jobs."})
+        json!({"response" : "ERROR", "text": "No valid data was submitted. Ensure the given platforms and content/presence types are supported by this server. Ensure all data was correctly labeled for queue jobs."})
     }
 }

@@ -86,6 +86,7 @@ pub struct InternalQueueItem {
     pub lock_holder: Option<String>, // None means not locked.
     pub lock_acquired_at: Option<DateTime<Utc>>,
     pub references: u128,
+    pub confirmed_id: bool,
 }
 
 impl InternalQueueItem {
@@ -98,6 +99,7 @@ impl InternalQueueItem {
             lock_holder: None,
             lock_acquired_at: None,
             references: 1,
+            confirmed_id: false,
         }
     }
 }
@@ -105,7 +107,7 @@ impl InternalQueueItem {
 #[get("/queue?<platforms>")]
 pub async fn queue(platforms: Vec<String>, db: &State<Database>, key: Key) -> Value {
     if platforms.is_empty() {
-        json!({ "response": "ERROR", "text": "You must specify which platforms you can do jobs for."})
+        json!({"response": "ERROR", "text": "You must specify which platforms you can do jobs for."})
     } else {
         // This is not optimal for performance. Should be running as a scheduled task in a thread.
         clear_old_locks(db).await;
@@ -118,8 +120,8 @@ pub async fn queue(platforms: Vec<String>, db: &State<Database>, key: Key) -> Va
         let q_coll: Collection<InternalQueueItem> = db.collection("queue");
         let result = q_coll
             .find_one_and_update(
-                doc! { "lock_holder": Bson::Null, "platform": {"$in": &platforms} },
-                doc! { "$set": 
+                doc! {"lock_holder": Bson::Null, "platform": {"$in": &platforms}},
+                doc! {"$set": 
                                 {
                                 "lock_holder": User::user_with_key(&key.key, db).await.unwrap().uuid, "lock_acquired_at": Utc::now().to_string()
                                 }
@@ -131,9 +133,9 @@ pub async fn queue(platforms: Vec<String>, db: &State<Database>, key: Key) -> Va
         if let Some(q_item) = result {
             let username: String = get_username(&q_item.platform_id, &q_item.platform, db).await;
 
-            json!({ "queue_id": &q_item.queue_id, "username": &username, "platform": &q_item.platform })
+            json!({"queue_id": &q_item.queue_id, "username": &username, "platform": &q_item.platform })
         } else {
-            json!({ "response": "ERROR", "text": "There are no jobs available. Please try again later."})
+            json!({"response": "ERROR", "text": "There are no jobs available. Please try again later."})
         }
     }
 }
@@ -159,7 +161,7 @@ pub async fn process(
         let find_result = q_coll
         .find_one(
             // It's possible we haven't found an ID for this user yet.
-            doc! { "queue_id" : queue_id, "platform": platform, "platform_id": &username, "lock_holder": added_by },
+            doc! {"queue_id" : queue_id, "platform": platform, "platform_id": &username, "lock_holder": added_by, "confirmed_id": false},
             None,
         )
         .await
@@ -170,7 +172,7 @@ pub async fn process(
             remove_queue_item(&username, platform, db).await;
             // and either merge the username with the already existing queue item
             // with that name or create a new one with the platform id.
-            add_queue_item(id, platform, db).await;
+            add_queue_item(id, platform, db, true).await;
 
             // and update the subject to use the platform ID instead of a username.
             let subj_coll: Collection<Subject> = db.collection("subjects");
@@ -178,8 +180,8 @@ pub async fn process(
             let platform_set_string = format!("profiles.{}.$", platform);
             let _subj_update_result = subj_coll
                 .update_one(
-                    doc! { &platform_query_string: &username },
-                    doc! { "$set": {&platform_set_string: id} },
+                    doc! {&platform_query_string: &username},
+                    doc! {"$set": {&platform_set_string: id}},
                     None,
                 )
                 .await
@@ -188,8 +190,8 @@ pub async fn process(
     }
     let q_update_result = q_coll
         .update_one(
-            doc! { "queue_id" : queue_id, "lock_holder": added_by },
-            doc! { "$set": {"lock_holder": Bson::Null, "lock_acquired_at": Bson::Null, "last_processed": Utc::now().to_string() } },
+            doc! {"queue_id" : queue_id, "lock_holder": added_by},
+            doc! {"$set": {"lock_holder": Bson::Null, "lock_acquired_at": Bson::Null, "last_processed": Utc::now().to_string()}},
             None,
         )
         .await
@@ -197,11 +199,16 @@ pub async fn process(
     q_update_result.modified_count == 1
 }
 
-pub async fn add_queue_item(platform_id: &str, platform: &str, db: &State<Database>) {
+pub async fn add_queue_item(
+    platform_id: &str,
+    platform: &str,
+    db: &State<Database>,
+    confirmed_id: bool,
+) {
     let q_coll: Collection<InternalQueueItem> = db.collection("queue");
     let q_item = q_coll
         .find_one(
-            doc! { "platform_id": platform_id, "platform": platform },
+            doc! {"platform_id": platform_id, "platform": platform},
             None,
         )
         .await
@@ -209,12 +216,22 @@ pub async fn add_queue_item(platform_id: &str, platform: &str, db: &State<Databa
     if q_item.is_some() {
         q_coll
             .update_one(
-                doc! { "platform_id": platform_id, "platform": platform },
-                doc! { "$inc": { "references": 1_u32 }},
+                doc! {"platform_id": platform_id, "platform": platform},
+                doc! {"$inc": {"references": 1_u32}},
                 None,
             )
             .await
             .unwrap();
+        if confirmed_id {
+            q_coll
+                .update_one(
+                    doc! {"platform_id": platform_id, "platform": platform},
+                    doc! {"$set": {"confirmed_id": true}},
+                    None,
+                )
+                .await
+                .unwrap();
+        }
     } else {
         let q_item: InternalQueueItem =
             InternalQueueItem::new(platform_id.to_string(), platform.to_string());
@@ -226,7 +243,7 @@ pub async fn remove_queue_item(platform_id: &str, platform: &str, db: &State<Dat
     let q_coll: Collection<InternalQueueItem> = db.collection("queue");
     let result = q_coll
         .delete_one(
-            doc! { "platform_id": platform_id, "platform": platform, "references": 1 },
+            doc! {"platform_id": platform_id, "platform": platform, "references": 1},
             None,
         )
         .await
@@ -234,8 +251,8 @@ pub async fn remove_queue_item(platform_id: &str, platform: &str, db: &State<Dat
     if result.deleted_count == 0 {
         q_coll
             .update_one(
-                doc! { "platform_id": platform_id, "platform": platform },
-                doc! { "$inc": { "references": -1_i32 }},
+                doc! {"platform_id": platform_id, "platform": platform},
+                doc! {"$inc": {"references": -1_i32}},
                 None,
             )
             .await
@@ -248,8 +265,8 @@ pub async fn clear_old_locks(db: &State<Database>) {
     let thirty_seconds_ago: DateTime<Utc> = Utc::now() - Duration::seconds(30);
     q_coll
         .update_many(
-            doc! { "lock_acquired_at": {"$lt": thirty_seconds_ago.to_string() } },
-            doc! { "$set": {"lock_acquired_at": Bson::Null, "lock_holder": Bson::Null }},
+            doc! {"lock_acquired_at": {"$lt": thirty_seconds_ago.to_string()}},
+            doc! {"$set": {"lock_acquired_at": Bson::Null, "lock_holder": Bson::Null}},
             None,
         )
         .await

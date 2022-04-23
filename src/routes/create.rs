@@ -81,15 +81,15 @@ async fn create_subject(data: CreateData, db: &State<Database>, key: Key) -> Val
         if subj_coll.insert_one(&subject, None).await.is_ok() {
             for platform in subject.profiles.keys() {
                 for id in subject.profiles.get(platform).unwrap() {
-                    queue::add_queue_item(id, platform, db).await;
+                    queue::add_queue_item(id, platform, db, false).await;
                 }
             }
-            json!({ "response" : "OK", "subject": &subject})
+            json!({"response" : "OK", "subject": &subject})
         } else {
-            json!({ "response" : "ERROR", "text": "Subject by that name already exists."})
+            json!({"response" : "ERROR", "text": "Subject by that name already exists."})
         }
     } else {
-        json!({ "response" : "ERROR", "text": "Subject couldn't be created from data."})
+        json!({"response" : "ERROR", "text": "Subject couldn't be created from data."})
     }
 }
 
@@ -100,15 +100,15 @@ async fn create_group(data: CreateData, db: &State<Database>, key: Key) -> Value
             let subj_coll: Collection<Subject> = db.collection("subjects");
             let subject = subj_coll.find_one(doc! {"uuid": s}, None).await.unwrap();
             if subject.is_none() {
-                return json!({ "response" : "ERROR", "text": "One or more of the subjects was not valid."});
+                return json!({"response" : "ERROR", "text": "One or more of the subjects was not valid."});
             }
         }
         if group_coll.insert_one(&group, None).await.is_ok() {
-            json!({ "response" : "OK", "group": &group})
+            json!({"response" : "OK", "group": &group})
         } else {
-            json!({ "response" : "ERROR", "text": "Group by that name already exists."})
+            json!({"response" : "ERROR", "text": "Group by that name already exists."})
         }
     } else {
-        json!({ "response" : "ERROR", "text": "Group couldn't be created from data."})
+        json!({"response" : "ERROR", "text": "Group couldn't be created from data."})
     }
 }

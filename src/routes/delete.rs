@@ -71,9 +71,9 @@ pub async fn delete(data: Json<DeleteData>, db: &State<Database>, key: Key) -> V
                 }
             }
 
-            json!({ "response" : "OK"})
+            json!({"response" : "OK"})
         } else {
-            json!({ "response" : "ERROR"})
+            json!({"response" : "ERROR"})
         }
     } else {
         let group_coll: Collection<Subject> = db.collection("groups");
@@ -85,9 +85,9 @@ pub async fn delete(data: Json<DeleteData>, db: &State<Database>, key: Key) -> V
                 .delete_one(doc! {"uuid": &data.uuid, "created_by": &req_uuid}, None)
                 .await
                 .unwrap();
-            json!({ "response" : "OK"})
+            json!({"response" : "OK"})
         } else {
-            json!({ "response" : "ERROR", "text": "No such group or subject exists or it was not created by the user with the given key."})
+            json!({"response" : "ERROR", "text": "No such group or subject exists or it was not created by the user with the given key."})
         }
     }
 }

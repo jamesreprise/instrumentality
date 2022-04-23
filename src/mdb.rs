@@ -25,7 +25,7 @@ pub async fn open(config: &IConfig) -> Result<Database, Box<dyn std::error::Erro
 
     // It is only at this point that MongoDB actually makes a connection.
     database
-        .run_command(doc! { "ping" : 1}, None)
+        .run_command(doc! {"ping" : 1}, None)
         .await
         .expect("Couldn't connect to MongoDB");
 
@@ -63,7 +63,7 @@ async fn unique_subject_name_index(
         .build();
 
     let idx_model = IndexModel::builder()
-        .keys(doc! { "created_by" : 1, "name": 1})
+        .keys(doc! {"created_by" : 1, "name": 1})
         .options(idx_options)
         .build();
 
@@ -83,7 +83,7 @@ async fn unique_content_index(
         .build();
 
     let idx_model = IndexModel::builder()
-        .keys(doc! { "content_id" : 1_u32, "platform": 1_u32, "content_type" : 1_u32})
+        .keys(doc! {"content_id" : 1_u32, "platform": 1_u32, "content_type" : 1_u32})
         .options(idx_options)
         .build();
 
