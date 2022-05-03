@@ -13,5 +13,5 @@ twitch_tv = ["stream_start", "video", "stream_end"]
 
 [presence_types]
 twitter = ["follower_count_increase"]
-last_fm = ["listening_now"]
+last_fm = ["now_playing"]
 twitch_tv = ["live"]
