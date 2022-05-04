@@ -3,13 +3,40 @@ use crate::data::Data;
 use crate::subject::Subject;
 use crate::user::User;
 
+use axum::async_trait;
+use axum::extract::{FromRequest, RequestParts};
+use axum::response::Response;
 use mongodb::options::{ClientOptions, IndexOptions};
 use mongodb::results::CreateIndexResult;
-use mongodb::{bson::doc, Client, Database};
-use mongodb::{Collection, IndexModel};
+use mongodb::{bson::doc, Client, Collection, Database, IndexModel};
 use std::time::Duration;
 
-pub async fn open(config: &IConfig) -> Result<Database, Box<dyn std::error::Error>> {
+// Now featuring the most cracked handle pool implementation!
+#[derive(Clone)]
+pub struct DBPool {
+    client: Client,
+    database: String,
+}
+
+impl DBPool {
+    pub fn handle(&self) -> DBHandle {
+        DBHandle {
+            db: self.client.database(&self.database),
+        }
+    }
+}
+
+pub struct DBHandle {
+    db: Database,
+}
+
+impl DBHandle {
+    pub fn collection<T>(&self, name: &str) -> Collection<T> {
+        self.db.collection::<T>(name)
+    }
+}
+
+pub async fn open(config: &IConfig) -> Result<DBPool, Box<dyn std::error::Error>> {
     let user = &config.mongodb.user;
     let password = &config.mongodb.password;
     let hosts = &config.mongodb.hosts;
@@ -25,7 +52,7 @@ pub async fn open(config: &IConfig) -> Result<Database, Box<dyn std::error::Erro
 
     // It is only at this point that MongoDB actually makes a connection.
     database
-        .run_command(doc! {"ping" : 1}, None)
+        .run_command(doc! {"ping" : 1_u32}, None)
         .await
         .expect("Couldn't connect to MongoDB");
 
@@ -39,7 +66,10 @@ pub async fn open(config: &IConfig) -> Result<Database, Box<dyn std::error::Erro
         create_indexes(&database).await;
     }
 
-    Ok(database)
+    Ok(DBPool {
+        client: mongo_client,
+        database: config.mongodb.database.to_string(),
+    })
 }
 
 async fn create_root_account(database: &Database) -> Result<User, Box<dyn std::error::Error>> {
@@ -63,7 +93,7 @@ async fn unique_subject_name_index(
         .build();
 
     let idx_model = IndexModel::builder()
-        .keys(doc! {"created_by" : 1, "name": 1})
+        .keys(doc! {"created_by" : 1_u32, "name": 1_u32})
         .options(idx_options)
         .build();
 
@@ -95,4 +125,17 @@ async fn unique_content_index(
 
 pub async fn drop_database(database: &Database) {
     database.drop(None).await.unwrap();
+}
+
+#[async_trait]
+impl<B: Send> FromRequest<B> for DBHandle {
+    type Rejection = Response;
+
+    async fn from_request(request: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
+        let db_pool = request.extensions().get::<DBPool>().unwrap();
+
+        let db = db_pool.handle();
+
+        Ok(db)
+    }
 }

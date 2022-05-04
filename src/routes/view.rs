@@ -11,20 +11,20 @@
 
 use crate::data::*;
 use crate::key::Key;
-use crate::rocket::futures::StreamExt;
+use crate::mdb::DBHandle;
+use crate::response::{Error, ViewResponse};
 use crate::subject::Subject;
 
+use axum::{http::StatusCode, Json};
+use mongodb::bson::doc;
 use mongodb::bson::Document;
 use mongodb::options::FindOptions;
 use mongodb::Collection;
-use mongodb::{bson::doc, Database};
-use rocket::serde::json::Value;
-use rocket::State;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use tokio_stream::StreamExt;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-struct ViewData {
+pub struct ViewData {
     subject_data: Vec<SubjectData>,
 }
 
@@ -81,8 +81,11 @@ impl ProfileData {
     }
 }
 
-#[get("/view?<subjects>")]
-pub async fn view(subjects: Vec<String>, db: &State<Database>, _key: Key) -> Value {
+pub async fn view(
+    subjects: Vec<String>,
+    db: DBHandle,
+    _key: Key,
+) -> Result<(StatusCode, Json<ViewResponse>), (StatusCode, Json<Error>)> {
     let mut view_data = ViewData::new();
 
     let data_coll: Collection<Data> = db.collection("data");
@@ -142,5 +145,5 @@ pub async fn view(subjects: Vec<String>, db: &State<Database>, _key: Key) -> Val
         view_data.subject_data.push(subject_data);
     }
 
-    json!({"response": "OK", "data": view_data})
+    Ok((StatusCode::OK, Json(ViewResponse::new(view_data))))
 }

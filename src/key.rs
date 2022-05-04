@@ -1,54 +1,58 @@
 //! API keys for authorisation.
 
+use crate::mdb::DBHandle;
+use crate::response::Error;
 use crate::user::User;
 
+use axum::extract::{FromRequest, RequestParts};
+use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
+use axum::{async_trait, Json};
+use mongodb::bson::doc;
 use mongodb::Collection;
-use mongodb::{bson::doc, Database};
-use rocket::http::Status;
-use rocket::request::{FromRequest, Outcome, Request};
-use rocket::State;
 
 pub struct Key {
     pub key: String,
 }
 
-#[derive(Debug)]
-pub struct InvalidKeyError;
+async fn user_exists_and_not_banned(db: &DBHandle, key: &str) -> bool {
+    let users: Collection<User> = db.collection("users");
+    // Vulnerable to nosql injection?
+    // Very basic tests says no. Not convinced.
+    users
+        .find_one(doc! {"key": key, "banned": false}, None)
+        .await
+        .unwrap()
+        .is_some()
+}
 
-#[rocket::async_trait]
-impl<'r> FromRequest<'r> for Key {
-    type Error = InvalidKeyError;
+#[async_trait]
+impl<B: Send> FromRequest<B> for Key {
+    type Rejection = Response;
 
-    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        async fn valid(db: &State<Database>, key: String) -> bool {
-            let users: Collection<User> = db.collection("users");
-            // Vulnerable to nosql injection?
-            // Very basic tests says no. Not convinced.
-            matches!(
-                users
-                    .find_one(doc! {"key": key, "banned": false}, None)
-                    .await,
-                Ok(Some(_))
-            )
-        }
-
-        let db = request
-            .guard::<&State<Database>>()
-            .await
-            .succeeded()
-            .unwrap();
+    async fn from_request(request: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
+        let db = request.extensions().get::<DBHandle>().unwrap();
 
         // This will still perform a lookup for key 'invalid'.
-        let key = request.headers().get_one("x-api-key").unwrap_or("invalid");
-        let result = request
-            .local_cache_async(async { valid(db, key.to_string()).await })
-            .await;
+        let key = request.headers().get("x-api-key");
+        match key {
+            Some(key) => {
+                let key = key.to_str().unwrap();
+                let result = user_exists_and_not_banned(&db, key).await;
 
-        match result {
-            true => Outcome::Success(Key {
-                key: key.to_string(),
-            }),
-            false => Outcome::Failure((Status::Unauthorized, InvalidKeyError)),
+                match result {
+                    true => Ok(Key {
+                        key: key.to_string(),
+                    }),
+                    false => Err(
+                        (StatusCode::UNAUTHORIZED, Json(Error::new("Unauthorized.")))
+                            .into_response(),
+                    ),
+                }
+            }
+            None => {
+                Err((StatusCode::UNAUTHORIZED, Json(Error::new("Unauthorized."))).into_response())
+            }
         }
     }
 }

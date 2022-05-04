@@ -105,7 +105,7 @@
 //! ```json
 //! {
 //!     "id": "123456789",
-//!     "platform": "twitch",      
+//!     "platform": "twitch",
 //!     "presence_type": "livestream",
 //!     "retrieved_at": "2022-01-01T00:00:00Z",
 //! };
@@ -119,12 +119,12 @@
 //! changes.
 
 use crate::config::IConfig;
+use crate::mdb::DBHandle;
 use crate::routes::queue;
 use crate::routes::queue::InternalQueueItem;
 
 use chrono::{DateTime, Utc};
-use mongodb::{bson::doc, Collection, Database};
-use rocket::State;
+use mongodb::{bson::doc, Collection};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -362,7 +362,7 @@ impl Datas {
     // - Does the queue item have a username attached or a platform id?
     // - Does all the data in self.data pertain to the queue job? If not filter it out.
     // Then get relevant data and pass it to the queue for processing.
-    pub async fn process_queue(self, db: &State<Database>) -> Self {
+    pub async fn process_queue(self, db: &DBHandle) -> Self {
         if !self.data.is_empty() && self.queue_id.is_some() {
             let mut verified_data = Vec::new();
             let queue_id = self.queue_id.clone().unwrap();

@@ -1,12 +1,11 @@
 //! Groups for organisitions of subjects.
 
 use crate::key::Key;
+use crate::mdb::DBHandle;
 use crate::routes::create::CreateData;
 use crate::user::User;
 
 use chrono::{DateTime, Utc};
-use mongodb::Database;
-use rocket::State;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -21,7 +20,7 @@ pub struct Group {
 }
 
 impl Group {
-    pub async fn from_group_create(cs: CreateData, db: &State<Database>, key: Key) -> Option<Self> {
+    pub async fn from_group_create(cs: CreateData, db: &DBHandle, key: Key) -> Option<Self> {
         match cs {
             CreateData::CreateGroup {
                 name,

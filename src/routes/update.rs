@@ -26,17 +26,18 @@
 
 use crate::group::Group;
 use crate::key::Key;
+use crate::mdb::DBHandle;
+use crate::response::{Error, Ok};
 use crate::routes::queue;
 use crate::subject::*;
 use crate::user::User;
 
+use axum::{http::StatusCode, response::IntoResponse, Json};
+use mongodb::bson::doc;
 use mongodb::{bson, Collection};
-use mongodb::{bson::doc, Database};
-use rocket::serde::json::{Json, Value};
-use rocket::State;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use std::collections::HashMap;
+// use tokio_stream::StreamExt;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
@@ -55,16 +56,19 @@ pub enum UpdateData {
     },
 }
 
-#[post("/update", format = "json", data = "<data>")]
-pub async fn update(data: Json<UpdateData>, db: &State<Database>, key: Key) -> Value {
-    let data = data.into_inner();
+pub async fn update(data: Json<UpdateData>, db: DBHandle, key: Key) -> impl IntoResponse {
+    let data = data.0;
     match &data {
-        UpdateData::UpdateSubject { .. } => update_subject(&data, db, &key).await,
-        UpdateData::UpdateGroup { .. } => update_group(&data, db, &key).await,
+        UpdateData::UpdateSubject { .. } => update_subject(&data, &db, &key).await,
+        UpdateData::UpdateGroup { .. } => update_group(&data, &db, &key).await,
     }
 }
 
-async fn update_subject(data: &UpdateData, db: &State<Database>, key: &Key) -> Value {
+async fn update_subject(
+    data: &UpdateData,
+    db: &DBHandle,
+    key: &Key,
+) -> Result<(StatusCode, Json<Ok>), (StatusCode, Json<Error>)> {
     let (uuid, name, profiles, description) = match data {
         UpdateData::UpdateSubject {
             uuid,
@@ -117,13 +121,22 @@ async fn update_subject(data: &UpdateData, db: &State<Database>, key: &Key) -> V
             )
             .await
             .unwrap();
-        json!({"response" : "OK"})
+        Ok((StatusCode::OK, Json(Ok::new())))
     } else {
-        json!({"response" : "ERROR", "text": "Subject does not exist or was not created by user with given key."})
+        Err((
+            StatusCode::BAD_REQUEST,
+            Json(Error::new(
+                "Subject does not exist or was not created by you.",
+            )),
+        ))
     }
 }
 
-async fn update_group(data: &UpdateData, db: &State<Database>, key: &Key) -> Value {
+async fn update_group(
+    data: &UpdateData,
+    db: &DBHandle,
+    key: &Key,
+) -> Result<(StatusCode, Json<Ok>), (StatusCode, Json<Error>)> {
     let (uuid, name, subjects, description) = match data {
         UpdateData::UpdateGroup {
             uuid,
@@ -147,8 +160,13 @@ async fn update_group(data: &UpdateData, db: &State<Database>, key: &Key) -> Val
             )
             .await
             .unwrap();
-        json!({"response" : "OK"})
+        Ok((StatusCode::OK, Json(Ok::new())))
     } else {
-        json!({"response" : "ERROR", "text": "Group does not exist or was not created by user with given key."})
+        Err((
+            StatusCode::BAD_REQUEST,
+            Json(Error::new(
+                "Group does not exist or was not created by you.",
+            )),
+        ))
     }
 }

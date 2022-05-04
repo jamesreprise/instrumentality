@@ -26,11 +26,23 @@
 
 use crate::config::IConfig;
 
-use rocket::serde::json::Value;
-use rocket::State;
-use serde_json::json;
+use axum::{http::StatusCode, response::IntoResponse, Json};
+use serde::Serialize;
+use std::collections::HashMap;
 
-#[get("/types")]
-pub async fn types(iconfig: &State<IConfig>) -> Value {
-    json!({"response": "OK", "content_types": iconfig.content_types, "presence_types": iconfig.presence_types})
+#[derive(Serialize)]
+struct TypesResponse {
+    response: String,
+    content_types: HashMap<String, Vec<String>>,
+    presence_types: HashMap<String, Vec<String>>,
+}
+
+pub async fn types(config: IConfig) -> impl IntoResponse {
+    let resp = TypesResponse {
+        response: "OK".to_string(),
+        content_types: config.content_types,
+        presence_types: config.presence_types,
+    };
+
+    (StatusCode::OK, Json(resp))
 }

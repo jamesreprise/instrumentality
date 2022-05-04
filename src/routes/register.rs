@@ -12,16 +12,15 @@
 //! }
 //! ```
 
+use crate::mdb::DBHandle;
+use crate::response::{Error, RegisterResponse};
 use crate::routes::invite::Referral;
 use crate::user::User;
 
+use axum::{http::StatusCode, response::IntoResponse, Json};
+use mongodb::bson::doc;
 use mongodb::Collection;
-use mongodb::{bson::doc, Database};
-use rocket::http::Status;
-use rocket::serde::json::{Json, Value};
-use rocket::State;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RegisterRequest {
@@ -34,22 +33,27 @@ pub struct RegisterError;
 
 // Invites can't be double used but we are double requesting with every attempt
 // /register wrt invite_valid and use_invite.
-#[post("/register", format = "json", data = "<req>", rank = 1)]
-pub async fn register(req: Json<RegisterRequest>, db: &State<Database>) -> Value {
-    if invite_valid(&req, db).await && username_not_taken(&req, db).await {
-        let result = register_user(&req, db).await;
+pub async fn register(req: Json<RegisterRequest>, db: DBHandle) -> impl IntoResponse {
+    if invite_valid(&req, &db).await && username_not_taken(&req, &db).await {
+        let result = register_user(&req, &db).await;
         match result {
-            Ok(user) => json!({"response": "OK", "result": user}),
-            _ => {
-                json!({"error_code": Status::InternalServerError.code, "text": Status::InternalServerError.reason_lossy()})
-            }
+            Ok(user) => Ok((StatusCode::OK, Json(RegisterResponse::new(user)))),
+            _ => Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(Error::new("Internal server error.")),
+            )),
         }
     } else {
-        json!({"response": "ERROR", "error_code": 401, "text": "Invalid invite or username taken."})
+        Err((
+            StatusCode::BAD_REQUEST,
+            Json(Error::new(
+                "Either the invite is invalid or the username is taken.",
+            )),
+        ))
     }
 }
 
-async fn invite_valid(req: &Json<RegisterRequest>, db: &State<Database>) -> bool {
+async fn invite_valid(req: &Json<RegisterRequest>, db: &DBHandle) -> bool {
     let refs_coll: Collection<Referral> = db.collection("referrals");
     let result = refs_coll
         .find_one(
@@ -60,7 +64,7 @@ async fn invite_valid(req: &Json<RegisterRequest>, db: &State<Database>) -> bool
     matches!(result, Ok(Some(_)))
 }
 
-async fn username_not_taken(req: &Json<RegisterRequest>, db: &State<Database>) -> bool {
+async fn username_not_taken(req: &Json<RegisterRequest>, db: &DBHandle) -> bool {
     let users_coll: Collection<User> = db.collection("users");
     let result = users_coll
         .find_one(doc! {"user": req.name.as_str()}, None)
@@ -68,12 +72,9 @@ async fn username_not_taken(req: &Json<RegisterRequest>, db: &State<Database>) -
     matches!(result, Ok(None))
 }
 
-async fn register_user(
-    req: &Json<RegisterRequest>,
-    db: &State<Database>,
-) -> Result<User, RegisterError> {
+async fn register_user(req: &Json<RegisterRequest>, db: &DBHandle) -> Result<User, RegisterError> {
     let user = User::new(&req.name);
-    let result = use_invite(&user, req, db).await;
+    let result = use_invite(&user, req, &db).await;
     if result.is_ok() {
         let users_coll: Collection<User> = db.collection("users");
 
@@ -90,7 +91,7 @@ async fn register_user(
 async fn use_invite(
     user: &User,
     req: &Json<RegisterRequest>,
-    db: &State<Database>,
+    db: &DBHandle,
 ) -> Result<Referral, RegisterError> {
     let refs_coll: Collection<Referral> = db.collection("referrals");
     let result = refs_coll

@@ -62,19 +62,19 @@
 
 use crate::data::Data;
 use crate::key::Key;
+use crate::mdb::DBHandle;
+use crate::response::{Error, QueueResponse};
 use crate::subject::Subject;
 use crate::user::User;
 
+use axum::{http::StatusCode, response::IntoResponse, Json};
 use chrono::offset::TimeZone;
 use chrono::{DateTime, Duration, Utc};
+use mongodb::bson::doc;
 use mongodb::bson::Bson;
 use mongodb::options::{FindOneAndUpdateOptions, FindOneOptions};
 use mongodb::Collection;
-use mongodb::{bson::doc, Database};
-use rocket::serde::json::Value;
-use rocket::State;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -104,13 +104,17 @@ impl InternalQueueItem {
     }
 }
 
-#[get("/queue?<platforms>")]
-pub async fn queue(platforms: Vec<String>, db: &State<Database>, key: Key) -> Value {
+pub async fn queue(platforms: Vec<String>, db: DBHandle, key: Key) -> impl IntoResponse {
     if platforms.is_empty() {
-        json!({"response": "ERROR", "text": "You must specify which platforms you can do jobs for."})
+        Err((
+            StatusCode::BAD_REQUEST,
+            Json(Error::new(
+                "You must specify which platforms you are performing jobs for.",
+            )),
+        ))
     } else {
         // This is not optimal for performance. Should be running as a scheduled task in a thread.
-        clear_old_locks(db).await;
+        clear_old_locks(&db).await;
 
         let filter_builder =
             FindOneAndUpdateOptions::builder().sort(doc! {"last_processed": -1_i32});
@@ -123,7 +127,7 @@ pub async fn queue(platforms: Vec<String>, db: &State<Database>, key: Key) -> Va
                 doc! {"lock_holder": Bson::Null, "platform": {"$in": &platforms}},
                 doc! {"$set": 
                                 {
-                                "lock_holder": User::user_with_key(&key.key, db).await.unwrap().uuid, "lock_acquired_at": Utc::now().to_string()
+                                "lock_holder": User::user_with_key(&key.key, &db).await.unwrap().uuid, "lock_acquired_at": Utc::now().to_string()
                                 }
                             },
                 filter,
@@ -131,11 +135,23 @@ pub async fn queue(platforms: Vec<String>, db: &State<Database>, key: Key) -> Va
             .await
             .unwrap();
         if let Some(q_item) = result {
-            let username: String = get_username(&q_item.platform_id, &q_item.platform, db).await;
+            let username: String = get_username(&q_item.platform_id, &q_item.platform, &db).await;
 
-            json!({"queue_id": &q_item.queue_id, "username": &username, "platform": &q_item.platform })
+            Ok((
+                StatusCode::OK,
+                Json(QueueResponse::new(
+                    q_item.queue_id,
+                    username,
+                    q_item.platform,
+                )),
+            ))
         } else {
-            json!({"response": "ERROR", "text": "There are no jobs available. Please try again later."})
+            Err((
+                StatusCode::OK,
+                Json(Error::new(
+                    "There are no jobs available. Please try again later.",
+                )),
+            ))
         }
     }
 }
@@ -152,7 +168,7 @@ pub async fn process(
     platform: &str,
     added_by: &Option<String>,
     username: Option<&String>,
-    db: &State<Database>,
+    db: &DBHandle,
 ) -> bool {
     let added_by = added_by.as_ref().unwrap();
     let q_coll: Collection<InternalQueueItem> = db.collection("queue");
@@ -199,12 +215,7 @@ pub async fn process(
     q_update_result.modified_count == 1
 }
 
-pub async fn add_queue_item(
-    platform_id: &str,
-    platform: &str,
-    db: &State<Database>,
-    confirmed_id: bool,
-) {
+pub async fn add_queue_item(platform_id: &str, platform: &str, db: &DBHandle, confirmed_id: bool) {
     let q_coll: Collection<InternalQueueItem> = db.collection("queue");
     let q_item = q_coll
         .find_one(
@@ -239,7 +250,7 @@ pub async fn add_queue_item(
     }
 }
 
-pub async fn remove_queue_item(platform_id: &str, platform: &str, db: &State<Database>) {
+pub async fn remove_queue_item(platform_id: &str, platform: &str, db: &DBHandle) {
     let q_coll: Collection<InternalQueueItem> = db.collection("queue");
     let result = q_coll
         .delete_one(
@@ -260,7 +271,7 @@ pub async fn remove_queue_item(platform_id: &str, platform: &str, db: &State<Dat
     }
 }
 
-pub async fn clear_old_locks(db: &State<Database>) {
+pub async fn clear_old_locks(db: &DBHandle) {
     let q_coll: Collection<InternalQueueItem> = db.collection("queue");
     let thirty_seconds_ago: DateTime<Utc> = Utc::now() - Duration::seconds(30);
     q_coll
@@ -273,8 +284,8 @@ pub async fn clear_old_locks(db: &State<Database>) {
         .unwrap();
 }
 
-pub async fn get_username(platform_id: &str, platform: &str, db: &State<Database>) -> String {
-    async fn from_meta(platform_id: &str, platform: &str, db: &State<Database>) -> Option<String> {
+pub async fn get_username(platform_id: &str, platform: &str, db: &DBHandle) -> String {
+    async fn from_meta(platform_id: &str, platform: &str, db: &DBHandle) -> Option<String> {
         let filter_builder = FindOneOptions::builder().projection(doc! {"username": 1_u32});
 
         let filter = filter_builder.build();

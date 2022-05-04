@@ -1,13 +1,12 @@
 //! Basic user concepts for Instrumentality.
 
-use crate::group::Group;
-use crate::rocket::futures::StreamExt;
 use crate::subject::Subject;
+use crate::{group::Group, mdb::DBHandle};
 
-use mongodb::{bson::doc, Collection, Cursor, Database};
-use rocket::State;
+use mongodb::{bson::doc, Collection, Cursor};
 use serde::{Deserialize, Serialize};
 use std::fmt::Write;
+use tokio_stream::StreamExt;
 use uuid::Uuid;
 
 #[derive(Eq, PartialEq, Clone, Debug, Deserialize, Serialize)]
@@ -38,14 +37,14 @@ impl User {
         key
     }
 
-    pub async fn user_with_key(key: &str, database: &State<Database>) -> Option<User> {
-        let users_coll: Collection<User> = database.collection("users");
+    pub async fn user_with_key(key: &str, db: &DBHandle) -> Option<User> {
+        let users_coll: Collection<User> = db.collection("users");
         let result = users_coll.find_one(doc! {"key": key}, None).await.unwrap();
         result
     }
 
-    pub async fn subjects(&self, database: &State<Database>) -> Option<Vec<Subject>> {
-        let subj_coll: Collection<Subject> = database.collection("subjects");
+    pub async fn subjects(&self, db: &DBHandle) -> Option<Vec<Subject>> {
+        let subj_coll: Collection<Subject> = db.collection("subjects");
         let cursor: Cursor<Subject> = subj_coll
             .find(doc! {"created_by": &self.uuid}, None)
             .await
@@ -60,8 +59,8 @@ impl User {
         }
     }
 
-    pub async fn groups(&self, database: &State<Database>) -> Option<Vec<Group>> {
-        let group_coll: Collection<Group> = database.collection("groups");
+    pub async fn groups(&self, db: &DBHandle) -> Option<Vec<Group>> {
+        let group_coll: Collection<Group> = db.collection("groups");
         let cursor: Cursor<Group> = group_coll
             .find(doc! {"created_by": &self.uuid}, None)
             .await

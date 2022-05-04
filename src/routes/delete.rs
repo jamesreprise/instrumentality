@@ -23,16 +23,17 @@
 
 use crate::group::Group;
 use crate::key::Key;
+use crate::mdb::DBHandle;
+use crate::response::Error;
+use crate::response::Ok;
 use crate::routes::queue;
 use crate::subject::*;
 use crate::user::User;
 
+use axum::{http::StatusCode, response::IntoResponse, Json};
+use mongodb::bson::doc;
 use mongodb::Collection;
-use mongodb::{bson::doc, Database};
-use rocket::serde::json::{Json, Value};
-use rocket::State;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DeleteData {
@@ -40,11 +41,10 @@ pub struct DeleteData {
 }
 
 // This is ugly. Can probably do better than an if-else.
-#[post("/delete", format = "json", data = "<data>")]
-pub async fn delete(data: Json<DeleteData>, db: &State<Database>, key: Key) -> Value {
-    let data: DeleteData = data.into_inner();
+pub async fn delete(data: Json<DeleteData>, db: DBHandle, key: Key) -> impl IntoResponse {
+    let data: DeleteData = data.0;
     // UUID of the requester.
-    let req_uuid = User::user_with_key(&key.key, db).await.unwrap().uuid;
+    let req_uuid = User::user_with_key(&key.key, &db).await.unwrap().uuid;
     let subj_coll: Collection<Subject> = db.collection("subjects");
     if let Ok(Some(subject)) = subj_coll
         .find_one(doc! {"uuid": &data.uuid, "created_by": &req_uuid}, None)
@@ -67,13 +67,16 @@ pub async fn delete(data: Json<DeleteData>, db: &State<Database>, key: Key) -> V
 
             for platform in subject.profiles.keys() {
                 for id in subject.profiles.get(platform).unwrap() {
-                    queue::remove_queue_item(id, platform, db).await;
+                    queue::remove_queue_item(id, platform, &db).await;
                 }
             }
 
-            json!({"response" : "OK"})
+            Ok((StatusCode::OK, Json(Ok::new())))
         } else {
-            json!({"response" : "ERROR"})
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(Error::new("Internal server error.")),
+            ))
         }
     } else {
         let group_coll: Collection<Subject> = db.collection("groups");
@@ -85,9 +88,12 @@ pub async fn delete(data: Json<DeleteData>, db: &State<Database>, key: Key) -> V
                 .delete_one(doc! {"uuid": &data.uuid, "created_by": &req_uuid}, None)
                 .await
                 .unwrap();
-            json!({"response" : "OK"})
+            Ok((StatusCode::OK, Json(Ok::new())))
         } else {
-            json!({"response" : "ERROR", "text": "No such group or subject exists or it was not created by the user with the given key."})
+            Err((
+                StatusCode::BAD_REQUEST,
+                Json(Error::new("No such group or subject exists or it was not created by the user with the given key.")),
+            ))
         }
     }
 }

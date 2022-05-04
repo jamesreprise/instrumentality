@@ -1,9 +1,6 @@
-use rocket::serde::json::Value;
-use serde_json::json;
+use crate::response::Ok;
+use axum::{http::StatusCode, response::IntoResponse, Json};
 
-#[get("/")]
-pub async fn frontpage() -> Value {
-    json!(
-        {"response": "OK"}
-    )
+pub async fn frontpage() -> impl IntoResponse {
+    (StatusCode::OK, Json(Ok::new()))
 }

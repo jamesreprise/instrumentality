@@ -1,7 +1,6 @@
-//! Routes for Rocket.
+//! Routes for Axum.
 
 pub mod add;
-pub mod catchers;
 pub mod create;
 pub mod delete;
 pub mod frontpage;

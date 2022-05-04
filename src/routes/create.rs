@@ -40,15 +40,15 @@
 
 use crate::group::*;
 use crate::key::Key;
+use crate::mdb::DBHandle;
+use crate::response::{Error, Ok};
 use crate::routes::queue;
 use crate::subject::*;
 
+use axum::{http::StatusCode, response::IntoResponse, Json};
+use mongodb::bson::doc;
 use mongodb::Collection;
-use mongodb::{bson::doc, Database};
-use rocket::serde::json::{Json, Value};
-use rocket::State;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -66,49 +66,59 @@ pub enum CreateData {
     },
 }
 
-#[post("/create", format = "json", data = "<data>")]
-pub async fn create(data: Json<CreateData>, db: &State<Database>, key: Key) -> Value {
-    let data = data.into_inner();
+pub async fn create(data: Json<CreateData>, db: DBHandle, key: Key) -> impl IntoResponse {
+    let data = data.0;
     match data {
-        CreateData::CreateSubject { .. } => create_subject(data, db, key).await,
-        CreateData::CreateGroup { .. } => create_group(data, db, key).await,
-    }
-}
-
-async fn create_subject(data: CreateData, db: &State<Database>, key: Key) -> Value {
-    let subj_coll: Collection<Subject> = db.collection("subjects");
-    if let Some(subject) = Subject::from_subject_create(data, db, key).await {
-        if subj_coll.insert_one(&subject, None).await.is_ok() {
-            for platform in subject.profiles.keys() {
-                for id in subject.profiles.get(platform).unwrap() {
-                    queue::add_queue_item(id, platform, db, false).await;
-                }
-            }
-            json!({"response" : "OK", "subject": &subject})
-        } else {
-            json!({"response" : "ERROR", "text": "Subject by that name already exists."})
-        }
-    } else {
-        json!({"response" : "ERROR", "text": "Subject couldn't be created from data."})
-    }
-}
-
-async fn create_group(data: CreateData, db: &State<Database>, key: Key) -> Value {
-    let group_coll: Collection<Group> = db.collection("groups");
-    if let Some(group) = Group::from_group_create(data, db, key).await {
-        for s in &group.subjects {
+        CreateData::CreateSubject { .. } => {
             let subj_coll: Collection<Subject> = db.collection("subjects");
-            let subject = subj_coll.find_one(doc! {"uuid": s}, None).await.unwrap();
-            if subject.is_none() {
-                return json!({"response" : "ERROR", "text": "One or more of the subjects was not valid."});
+            if let Some(subject) = Subject::from_subject_create(data, &db, key).await {
+                if subj_coll.insert_one(&subject, None).await.is_ok() {
+                    for platform in subject.profiles.keys() {
+                        for id in subject.profiles.get(platform).unwrap() {
+                            queue::add_queue_item(id, platform, &db, false).await;
+                        }
+                    }
+                    Ok((StatusCode::OK, Json(Ok::new())))
+                } else {
+                    Err((
+                        StatusCode::CONFLICT,
+                        Json(Error::new("Subject by that name already exists.")),
+                    ))
+                }
+            } else {
+                Err((
+                    StatusCode::BAD_REQUEST,
+                    Json(Error::new("Subject couldn't be created from data.")),
+                ))
             }
         }
-        if group_coll.insert_one(&group, None).await.is_ok() {
-            json!({"response" : "OK", "group": &group})
-        } else {
-            json!({"response" : "ERROR", "text": "Group by that name already exists."})
+        CreateData::CreateGroup { .. } => {
+            let group_coll: Collection<Group> = db.collection("groups");
+            if let Some(group) = Group::from_group_create(data, &db, key).await {
+                for s in &group.subjects {
+                    let subj_coll: Collection<Subject> = db.collection("subjects");
+                    let subject = subj_coll.find_one(doc! {"uuid": s}, None).await.unwrap();
+                    if subject.is_none() {
+                        return Err((
+                            StatusCode::CONFLICT,
+                            Json(Error::new("One or more of the subjects does not exist.")),
+                        ));
+                    }
+                }
+                if group_coll.insert_one(&group, None).await.is_ok() {
+                    Ok((StatusCode::OK, Json(Ok::new())))
+                } else {
+                    Err((
+                        StatusCode::CONFLICT,
+                        Json(Error::new("Group by that name already exists.")),
+                    ))
+                }
+            } else {
+                Err((
+                    StatusCode::BAD_REQUEST,
+                    Json(Error::new("Group couldn't be created from data.")),
+                ))
+            }
         }
-    } else {
-        json!({"response" : "ERROR", "text": "Group couldn't be created from data."})
     }
 }

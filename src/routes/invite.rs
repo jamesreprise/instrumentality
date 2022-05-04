@@ -17,15 +17,15 @@
 //! ```
 
 use crate::key::Key;
+use crate::mdb::DBHandle;
+use crate::response::{Error, InviteResponse};
 use crate::user::User;
 
+use axum::{http::StatusCode, response::IntoResponse, Json};
 use chrono::{DateTime, Utc};
+use mongodb::bson::doc;
 use mongodb::Collection;
-use mongodb::{bson::doc, Database};
-use rocket::serde::json::Value;
-use rocket::State;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use std::fmt::Write;
 
 #[derive(Debug)]
@@ -62,12 +62,14 @@ impl Referral {
     }
 }
 
-#[get("/invite", rank = 1)]
-pub async fn invite(key: Key, db: &State<Database>) -> Value {
-    create_invite(key, db).await.unwrap()
+pub async fn invite(key: Key, db: DBHandle) -> impl IntoResponse {
+    create_invite(key, &db).await
 }
 
-async fn create_invite(key: Key, db: &State<Database>) -> Result<Value, InviteError> {
+async fn create_invite(
+    key: Key,
+    db: &DBHandle,
+) -> Result<(StatusCode, Json<InviteResponse>), (StatusCode, Json<Error>)> {
     let code = Referral::new_code();
 
     let refer_coll: Collection<Referral> = db.collection("referrals");
@@ -79,7 +81,7 @@ async fn create_invite(key: Key, db: &State<Database>) -> Result<Value, InviteEr
         .await
         .unwrap();
 
-    Ok(json!({"response": "OK", "code": &code}))
+    Ok((StatusCode::OK, Json(InviteResponse::new(code))))
 }
 
 #[cfg(test)]

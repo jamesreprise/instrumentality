@@ -1,12 +1,11 @@
 //! Subjects for organisation of profiles.
 
 use crate::key::Key;
+use crate::mdb::DBHandle;
 use crate::routes::create::CreateData;
 use crate::user::User;
 
 use chrono::{DateTime, Utc};
-use mongodb::Database;
-use rocket::State;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -29,11 +28,7 @@ pub struct Subjects {
 // We're not using From/Into as currently functions in traits cannot be declared `async`
 // Additionally, it's unclear whether From allows failure without extra plumbing.
 impl Subject {
-    pub async fn from_subject_create(
-        cs: CreateData,
-        db: &State<Database>,
-        key: Key,
-    ) -> Option<Self> {
+    pub async fn from_subject_create(cs: CreateData, db: &DBHandle, key: Key) -> Option<Self> {
         match cs {
             CreateData::CreateSubject {
                 name,

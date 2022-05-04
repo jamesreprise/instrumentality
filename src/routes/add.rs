@@ -15,26 +15,19 @@
 use crate::config::IConfig;
 use crate::data::*;
 use crate::key::Key;
+use crate::mdb::DBHandle;
+use crate::response::{Error, Ok};
 use crate::user::User;
 
+use axum::{http::StatusCode, response::IntoResponse, Json};
 use mongodb::Collection;
-use mongodb::{bson::doc, Database};
-use rocket::serde::json::{Json, Value};
-use rocket::State;
-use serde_json::json;
 
-#[post("/add", format = "json", data = "<data>")]
-pub async fn add(
-    key: Key,
-    data: Json<Datas>,
-    db: &State<Database>,
-    config: &State<IConfig>,
-) -> Value {
+pub async fn add(key: Key, data: Json<Datas>, db: DBHandle, config: IConfig) -> impl IntoResponse {
+    let data: Datas = data.0;
     let data = data
-        .into_inner()
-        .verify(config)
-        .tag(User::user_with_key(&key.key, db).await.unwrap().uuid)
-        .process_queue(db)
+        .verify(&config)
+        .tag(User::user_with_key(&key.key, &db).await.unwrap().uuid)
+        .process_queue(&db)
         .await;
     let data_coll: Collection<Data> = db.collection("data");
     // We need to merge existing Data::Content here.
@@ -45,8 +38,8 @@ pub async fn add(
     // Additionally, deleted can become true.
     if !data.data.is_empty() {
         data_coll.insert_many(data.data, None).await.unwrap();
-        json!({"response" : "OK"})
+        Ok((StatusCode::OK, Json(Ok::new())))
     } else {
-        json!({"response" : "ERROR", "text": "No valid data was submitted. Ensure the given platforms and content/presence types are supported by this server. Ensure all data was correctly labeled for queue jobs."})
+        Err((StatusCode::NOT_ACCEPTABLE, Json(Error::new("No valid data was submitted. Ensure the given platforms and content/presence types are supported by this server. Ensure all data was correctly labeled for queue jobs."))))
     }
 }

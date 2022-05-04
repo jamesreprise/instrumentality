@@ -21,7 +21,7 @@ See <https://github.com/berserksystems/instrumentality/releases/>.
 See <https://instrumentality.berserksystems.com/docs/>.
 
 ## Architecture
-This is a Rocket web server, the core logic of which can be seen in [server.rs](src/server.rs). All information is written to a MongoDB cluster, seen in [mdb.rs](src/mdb.rs). 
+This is an Axum web server, the core logic of which can be seen in [server.rs](src/server.rs). All information is written to a MongoDB cluster, seen in [mdb.rs](src/mdb.rs). 
 
 Instrumentality is interacted with solely through routes, which are stored in [/routes](/src/routes/). 
 ```
