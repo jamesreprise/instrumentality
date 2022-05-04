@@ -25,24 +25,12 @@
 //! ```
 
 use crate::config::IConfig;
+use crate::response::TypesResponse;
 
 use axum::{http::StatusCode, response::IntoResponse, Json};
-use serde::Serialize;
-use std::collections::HashMap;
-
-#[derive(Serialize)]
-struct TypesResponse {
-    response: String,
-    content_types: HashMap<String, Vec<String>>,
-    presence_types: HashMap<String, Vec<String>>,
-}
 
 pub async fn types(config: IConfig) -> impl IntoResponse {
-    let resp = TypesResponse {
-        response: "OK".to_string(),
-        content_types: config.content_types,
-        presence_types: config.presence_types,
-    };
+    let resp = TypesResponse::new(config.content_types, config.presence_types);
 
     (StatusCode::OK, Json(resp))
 }

@@ -7,9 +7,9 @@
 //!
 //! This returns user information if the given key is valid.
 
+use crate::database::DBHandle;
 use crate::group::Group;
 use crate::key::Key;
-use crate::mdb::DBHandle;
 use crate::subject::Subject;
 use crate::user::User;
 

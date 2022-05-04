@@ -21,9 +21,9 @@
 //!     "response": "OK"
 //! }
 
+use crate::database::DBHandle;
 use crate::group::Group;
 use crate::key::Key;
-use crate::mdb::DBHandle;
 use crate::response::Error;
 use crate::response::Ok;
 use crate::routes::queue;
@@ -41,8 +41,7 @@ pub struct DeleteData {
 }
 
 // This is ugly. Can probably do better than an if-else.
-pub async fn delete(data: Json<DeleteData>, db: DBHandle, key: Key) -> impl IntoResponse {
-    let data: DeleteData = data.0;
+pub async fn delete(Json(data): Json<DeleteData>, db: DBHandle, key: Key) -> impl IntoResponse {
     // UUID of the requester.
     let req_uuid = User::user_with_key(&key.key, &db).await.unwrap().uuid;
     let subj_coll: Collection<Subject> = db.collection("subjects");

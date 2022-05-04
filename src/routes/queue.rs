@@ -61,20 +61,20 @@
 //! Additionally, profiles under a single subject become hot by association.
 
 use crate::data::Data;
+use crate::database::DBHandle;
 use crate::key::Key;
-use crate::mdb::DBHandle;
 use crate::response::{Error, QueueResponse};
 use crate::subject::Subject;
 use crate::user::User;
 
-use axum::{http::StatusCode, response::IntoResponse, Json};
+use axum::{extract::Query, http::StatusCode, response::IntoResponse, Json};
 use chrono::offset::TimeZone;
 use chrono::{DateTime, Duration, Utc};
 use mongodb::bson::doc;
 use mongodb::bson::Bson;
 use mongodb::options::{FindOneAndUpdateOptions, FindOneOptions};
 use mongodb::Collection;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -104,7 +104,34 @@ impl InternalQueueItem {
     }
 }
 
-pub async fn queue(platforms: Vec<String>, db: DBHandle, key: Key) -> impl IntoResponse {
+// https://github.com/tokio-rs/axum/issues/434#issuecomment-954924025
+// No support for vec in query. Using workaround by jplatte.
+#[derive(Deserialize)]
+pub struct QueueQuery {
+    #[serde(deserialize_with = "deserialize_array")]
+    platforms: Vec<String>,
+}
+
+fn deserialize_array<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    let nb = s
+        .chars()
+        .filter(|c| vec!['[', ']'].contains(c))
+        .collect::<String>();
+    let v = nb.split(",").map(|s| s.into()).collect::<Vec<String>>();
+
+    Ok(v)
+}
+
+pub async fn queue(
+    Query(queue_query): Query<QueueQuery>,
+    db: DBHandle,
+    key: Key,
+) -> impl IntoResponse {
+    let platforms = queue_query.platforms;
     if platforms.is_empty() {
         Err((
             StatusCode::BAD_REQUEST,

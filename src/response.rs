@@ -122,3 +122,23 @@ impl SubjectResponse {
         }
     }
 }
+
+#[derive(Serialize)]
+pub struct TypesResponse {
+    response: String,
+    content_types: std::collections::HashMap<String, Vec<String>>,
+    presence_types: std::collections::HashMap<String, Vec<String>>,
+}
+
+impl TypesResponse {
+    pub fn new(
+        content_types: std::collections::HashMap<String, Vec<String>>,
+        presence_types: std::collections::HashMap<String, Vec<String>>,
+    ) -> Self {
+        Self {
+            response: "OK".to_string(),
+            content_types,
+            presence_types,
+        }
+    }
+}

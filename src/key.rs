@@ -1,6 +1,6 @@
 //! API keys for authorisation.
 
-use crate::mdb::DBHandle;
+use crate::database::{DBHandle, DBPool};
 use crate::response::Error;
 use crate::user::User;
 
@@ -31,14 +31,14 @@ impl<B: Send> FromRequest<B> for Key {
     type Rejection = Response;
 
     async fn from_request(request: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
-        let db = request.extensions().get::<DBHandle>().unwrap();
+        let db = request.extensions().get::<DBPool>().unwrap();
 
         // This will still perform a lookup for key 'invalid'.
         let key = request.headers().get("x-api-key");
         match key {
             Some(key) => {
                 let key = key.to_str().unwrap();
-                let result = user_exists_and_not_banned(&db, key).await;
+                let result = user_exists_and_not_banned(&db.handle(), key).await;
 
                 match result {
                     true => Ok(Key {

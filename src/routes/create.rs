@@ -38,9 +38,9 @@
 //! }
 //! ```
 
+use crate::database::DBHandle;
 use crate::group::*;
 use crate::key::Key;
-use crate::mdb::DBHandle;
 use crate::response::{Error, Ok};
 use crate::routes::queue;
 use crate::subject::*;
@@ -66,8 +66,7 @@ pub enum CreateData {
     },
 }
 
-pub async fn create(data: Json<CreateData>, db: DBHandle, key: Key) -> impl IntoResponse {
-    let data = data.0;
+pub async fn create(Json(data): Json<CreateData>, db: DBHandle, key: Key) -> impl IntoResponse {
     match data {
         CreateData::CreateSubject { .. } => {
             let subj_coll: Collection<Subject> = db.collection("subjects");

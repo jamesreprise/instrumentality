@@ -578,7 +578,6 @@ dependencies = [
  "mongodb",
  "regex",
  "serde",
- "serde_json",
  "tokio",
  "tokio-stream",
  "toml",

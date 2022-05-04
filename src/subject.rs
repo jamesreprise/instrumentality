@@ -1,7 +1,7 @@
 //! Subjects for organisation of profiles.
 
+use crate::database::DBHandle;
 use crate::key::Key;
-use crate::mdb::DBHandle;
 use crate::routes::create::CreateData;
 use crate::user::User;
 

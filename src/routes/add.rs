@@ -14,16 +14,20 @@
 
 use crate::config::IConfig;
 use crate::data::*;
+use crate::database::DBHandle;
 use crate::key::Key;
-use crate::mdb::DBHandle;
 use crate::response::{Error, Ok};
 use crate::user::User;
 
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use mongodb::Collection;
 
-pub async fn add(key: Key, data: Json<Datas>, db: DBHandle, config: IConfig) -> impl IntoResponse {
-    let data: Datas = data.0;
+pub async fn add(
+    key: Key,
+    Json(data): Json<Datas>,
+    db: DBHandle,
+    config: IConfig,
+) -> impl IntoResponse {
     let data = data
         .verify(&config)
         .tag(User::user_with_key(&key.key, &db).await.unwrap().uuid)

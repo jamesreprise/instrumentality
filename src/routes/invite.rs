@@ -16,8 +16,8 @@
 //! }
 //! ```
 
+use crate::database::DBHandle;
 use crate::key::Key;
-use crate::mdb::DBHandle;
 use crate::response::{Error, InviteResponse};
 use crate::user::User;
 

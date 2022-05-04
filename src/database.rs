@@ -62,7 +62,10 @@ pub async fn open(config: &IConfig) -> Result<DBPool, Box<dyn std::error::Error>
         .await
         .unwrap();
     if user_count == 0 {
-        create_root_account(&database).await.unwrap();
+        tracing::info!("Creating root account...");
+        let root_user = create_root_account(&database).await.unwrap();
+        tracing::info!("\n{:#?}", root_user);
+        tracing::info!("Creating indexes...");
         create_indexes(&database).await;
     }
 

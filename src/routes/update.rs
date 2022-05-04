@@ -24,9 +24,9 @@
 //!     "response": "OK"
 //! }
 
+use crate::database::DBHandle;
 use crate::group::Group;
 use crate::key::Key;
-use crate::mdb::DBHandle;
 use crate::response::{Error, Ok};
 use crate::routes::queue;
 use crate::subject::*;
@@ -56,9 +56,8 @@ pub enum UpdateData {
     },
 }
 
-pub async fn update(data: Json<UpdateData>, db: DBHandle, key: Key) -> impl IntoResponse {
-    let data = data.0;
-    match &data {
+pub async fn update(Json(data): Json<UpdateData>, db: DBHandle, key: Key) -> impl IntoResponse {
+    match data {
         UpdateData::UpdateSubject { .. } => update_subject(&data, &db, &key).await,
         UpdateData::UpdateGroup { .. } => update_group(&data, &db, &key).await,
     }

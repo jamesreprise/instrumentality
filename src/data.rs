@@ -119,7 +119,7 @@
 //! changes.
 
 use crate::config::IConfig;
-use crate::mdb::DBHandle;
+use crate::database::DBHandle;
 use crate::routes::queue;
 use crate::routes::queue::InternalQueueItem;
 

@@ -2,6 +2,7 @@
 
 pub mod add;
 pub mod create;
+pub mod default;
 pub mod delete;
 pub mod frontpage;
 pub mod invite;

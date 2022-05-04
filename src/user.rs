@@ -1,7 +1,7 @@
 //! Basic user concepts for Instrumentality.
 
 use crate::subject::Subject;
-use crate::{group::Group, mdb::DBHandle};
+use crate::{database::DBHandle, group::Group};
 
 use mongodb::{bson::doc, Collection, Cursor};
 use serde::{Deserialize, Serialize};

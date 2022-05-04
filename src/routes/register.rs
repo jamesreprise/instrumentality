@@ -12,7 +12,7 @@
 //! }
 //! ```
 
-use crate::mdb::DBHandle;
+use crate::database::DBHandle;
 use crate::response::{Error, RegisterResponse};
 use crate::routes::invite::Referral;
 use crate::user::User;
@@ -33,7 +33,7 @@ pub struct RegisterError;
 
 // Invites can't be double used but we are double requesting with every attempt
 // /register wrt invite_valid and use_invite.
-pub async fn register(req: Json<RegisterRequest>, db: DBHandle) -> impl IntoResponse {
+pub async fn register(Json(req): Json<RegisterRequest>, db: DBHandle) -> impl IntoResponse {
     if invite_valid(&req, &db).await && username_not_taken(&req, &db).await {
         let result = register_user(&req, &db).await;
         match result {
@@ -53,7 +53,7 @@ pub async fn register(req: Json<RegisterRequest>, db: DBHandle) -> impl IntoResp
     }
 }
 
-async fn invite_valid(req: &Json<RegisterRequest>, db: &DBHandle) -> bool {
+async fn invite_valid(req: &RegisterRequest, db: &DBHandle) -> bool {
     let refs_coll: Collection<Referral> = db.collection("referrals");
     let result = refs_coll
         .find_one(
@@ -64,7 +64,7 @@ async fn invite_valid(req: &Json<RegisterRequest>, db: &DBHandle) -> bool {
     matches!(result, Ok(Some(_)))
 }
 
-async fn username_not_taken(req: &Json<RegisterRequest>, db: &DBHandle) -> bool {
+async fn username_not_taken(req: &RegisterRequest, db: &DBHandle) -> bool {
     let users_coll: Collection<User> = db.collection("users");
     let result = users_coll
         .find_one(doc! {"user": req.name.as_str()}, None)
@@ -72,7 +72,7 @@ async fn username_not_taken(req: &Json<RegisterRequest>, db: &DBHandle) -> bool 
     matches!(result, Ok(None))
 }
 
-async fn register_user(req: &Json<RegisterRequest>, db: &DBHandle) -> Result<User, RegisterError> {
+async fn register_user(req: &RegisterRequest, db: &DBHandle) -> Result<User, RegisterError> {
     let user = User::new(&req.name);
     let result = use_invite(&user, req, &db).await;
     if result.is_ok() {
@@ -90,7 +90,7 @@ async fn register_user(req: &Json<RegisterRequest>, db: &DBHandle) -> Result<Use
 
 async fn use_invite(
     user: &User,
-    req: &Json<RegisterRequest>,
+    req: &RegisterRequest,
     db: &DBHandle,
 ) -> Result<Referral, RegisterError> {
     let refs_coll: Collection<Referral> = db.collection("referrals");
