@@ -104,13 +104,18 @@ where
 }
 
 pub async fn view(
-    Query(view_query): Query<ViewQuery>,
+    view_query: Option<Query<ViewQuery>>,
     db: DBHandle,
     _key: Key,
 ) -> Result<(StatusCode, Json<ViewResponse>), (StatusCode, Json<Error>)> {
-    let mut view_data = ViewData::new();
+    if view_query.is_none() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(Error::new("You must provide a list of subjects.")),
+        ));
+    }
 
-    let subjects = view_query.subjects;
+    let subjects = &view_query.unwrap().subjects;
 
     let data_coll: Collection<Data> = db.collection("data");
     let filter_builder = FindOptions::builder()
@@ -124,6 +129,8 @@ pub async fn view(
     let subj_cursor = subj_coll.find(doc, None).await.unwrap();
     let results: Vec<Result<Subject, mongodb::error::Error>> = subj_cursor.collect().await;
     let subjects: Vec<Subject> = results.into_iter().map(|d| d.unwrap()).collect();
+
+    let mut view_data = ViewData::new();
 
     for s in subjects {
         let mut subject_data: SubjectData = SubjectData::new(&s);

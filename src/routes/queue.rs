@@ -127,11 +127,19 @@ where
 }
 
 pub async fn queue(
-    Query(queue_query): Query<QueueQuery>,
+    queue_query: Option<Query<QueueQuery>>,
     db: DBHandle,
     key: Key,
 ) -> impl IntoResponse {
-    let platforms = queue_query.platforms;
+    if queue_query.is_none() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(Error::new(
+                "You must provide a list of supported platforms.",
+            )),
+        ));
+    }
+    let platforms = &queue_query.unwrap().platforms;
     if platforms.is_empty() {
         Err((
             StatusCode::BAD_REQUEST,
