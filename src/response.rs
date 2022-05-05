@@ -64,21 +64,6 @@ impl QueueResponse {
 }
 
 #[derive(Serialize)]
-pub struct GroupResponse {
-    response: String,
-    group: crate::group::Group,
-}
-
-impl GroupResponse {
-    pub fn new(group: crate::group::Group) -> Self {
-        Self {
-            response: "OK".to_string(),
-            group,
-        }
-    }
-}
-
-#[derive(Serialize)]
 pub struct RegisterResponse {
     response: String,
     user: crate::user::User,
@@ -104,21 +89,6 @@ impl ViewResponse {
         Self {
             response: "OK".to_string(),
             view_data,
-        }
-    }
-}
-
-#[derive(Serialize)]
-pub struct SubjectResponse {
-    response: String,
-    subject: crate::subject::Subject,
-}
-
-impl SubjectResponse {
-    pub fn new(subject: crate::subject::Subject) -> Self {
-        Self {
-            response: "OK".to_string(),
-            subject,
         }
     }
 }

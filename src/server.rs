@@ -16,6 +16,7 @@ use crate::routes::view::*;
 
 use axum::http::header::{self, HeaderValue};
 use axum::http::StatusCode;
+use axum::middleware;
 use axum::{
     error_handling::HandleErrorLayer,
     extract::Extension,
@@ -73,7 +74,8 @@ pub async fn build_server(config: &str) {
         .route("/update", post(update))
         .route("/add", post(add))
         .fallback(default.into_service())
-        .layer(service_builder);
+        .layer(service_builder)
+        .layer(middleware::from_fn(error_transformer));
 
     let tls_config = RustlsConfig::from_pem_file(&config.tls.cert, &config.tls.key)
         .await
