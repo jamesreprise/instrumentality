@@ -1,10 +1,11 @@
-//! Server functions for building Instrumentality. 
-//! 
+//! Server functions for building Instrumentality.
+//!
 //! We build the tracing, service, router in this module.
 
-
 use crate::config;
+use crate::config::IConfig;
 use crate::database;
+use crate::database::DBPool;
 use crate::response::Error;
 use crate::routes::add::*;
 use crate::routes::create::*;
@@ -36,18 +37,36 @@ use tower_http::set_header::SetResponseHeaderLayer;
 use tower_http::BoxError;
 use tracing_subscriber::{prelude::*, EnvFilter};
 
-pub async fn build_server(config: &str) {
-    tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer())
-        .with(EnvFilter::new("INFO"))
-        .init();
+pub async fn build_server(config: &str) -> (Router, RustlsConfig, SocketAddr) {
+    build_tracing();
 
     let config = config::open(config).unwrap();
     tracing::info!("Config file loaded.");
     let db_pool = database::open(&config).await.unwrap();
     tracing::info!("Connected to MongoDB.");
 
+    let app = build_app(config.clone(), db_pool);
+
+    tracing::info!("Application built.");
+
+    let tls_config = build_tls(&config.tls.cert, &config.tls.key).await;
+
+    tracing::info!("TLS key & cert loaded.");
+    let addr = build_address(&config.network.address, &config.network.port);
+
+    (app, tls_config, addr)
+}
+
+fn build_tracing() {
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .with(EnvFilter::new("INFO"))
+        .init();
+}
+
+fn build_app(config: IConfig, db_pool: DBPool) -> Router {
     let service_builder = ServiceBuilder::new()
+        .layer(middleware::from_fn(error_transformer))
         .layer(HandleErrorLayer::new(|error: BoxError| async move {
             if error.is::<tower::timeout::error::Elapsed>() {
                 Ok(StatusCode::REQUEST_TIMEOUT)
@@ -58,7 +77,7 @@ pub async fn build_server(config: &str) {
                 ))
             }
         }))
-        .layer(Extension(config.clone()))
+        .layer(Extension(config))
         .layer(Extension(db_pool))
         .layer(SetResponseHeaderLayer::overriding(
             header::SERVER,
@@ -66,7 +85,7 @@ pub async fn build_server(config: &str) {
         ))
         .timeout(Duration::from_secs(5));
 
-    let app = Router::new()
+    Router::new()
         .route("/", get(frontpage))
         .route("/types", get(types))
         .route("/login", get(login))
@@ -78,22 +97,14 @@ pub async fn build_server(config: &str) {
         .route("/delete", post(delete))
         .route("/update", post(update))
         .route("/add", post(add))
-        .fallback(default.into_service())
         .layer(service_builder)
-        .layer(middleware::from_fn(error_transformer));
+        .fallback(default.into_service())
+}
 
-    let tls_config = RustlsConfig::from_pem_file(&config.tls.cert, &config.tls.key)
-        .await
-        .unwrap();
-    tracing::info!("TLS key & cert loaded.");
+fn build_address(address: &str, port: &str) -> SocketAddr {
+    format!("{}:{}", address, port).parse().unwrap()
+}
 
-    let addr: SocketAddr = format!("{}:{}", config.network.address, config.network.port)
-        .parse()
-        .unwrap();
-
-    tracing::info!("Launching Instrumentality...");
-    let server = axum_server::bind_rustls(addr, tls_config).serve(app.into_make_service());
-
-    tracing::info!("READY: https://{:?}.", addr);
-    server.await.unwrap();
+async fn build_tls(cert: &str, key: &str) -> RustlsConfig {
+    RustlsConfig::from_pem_file(cert, key).await.unwrap()
 }

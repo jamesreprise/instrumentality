@@ -7,6 +7,7 @@
 //!
 //! This returns user information if the given key is valid.
 
+use crate::database;
 use crate::database::DBHandle;
 use crate::group::Group;
 use crate::key::Key;
@@ -25,12 +26,14 @@ pub struct LoginResponse {
 }
 
 pub async fn login(key: Key, db: DBHandle) -> impl IntoResponse {
-    let user: User = User::user_with_key(&key.key, &db).await.unwrap();
+    let user: User = database::user_with_key(&key.key, &db).await.unwrap();
     let resp = LoginResponse {
         response: "OK".to_string(),
         user: user.clone(),
-        subjects: user.subjects(&db).await.unwrap_or_default(),
-        groups: user.groups(&db).await.unwrap_or_default(),
+        subjects: database::user_subjects(&user, &db)
+            .await
+            .unwrap_or_default(),
+        groups: database::user_groups(&user, &db).await.unwrap_or_default(),
     };
 
     (StatusCode::OK, Json(resp))

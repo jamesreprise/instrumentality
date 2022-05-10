@@ -61,11 +61,10 @@
 //! Additionally, profiles under a single subject become hot by association.
 
 use crate::data::Data;
-use crate::database::DBHandle;
+use crate::database::{self, DBHandle};
 use crate::key::Key;
 use crate::response::{Error, QueueResponse};
 use crate::subject::Subject;
-use crate::user::User;
 
 use axum::{extract::Query, http::StatusCode, response::IntoResponse, Json};
 use chrono::offset::TimeZone;
@@ -162,7 +161,7 @@ pub async fn queue(
                 doc! {"lock_holder": Bson::Null, "platform": {"$in": &platforms}},
                 doc! {"$set": 
                                 {
-                                "lock_holder": User::user_with_key(&key.key, &db).await.unwrap().uuid, "lock_acquired_at": Utc::now().to_string()
+                                "lock_holder": database::user_with_key(&key.key, &db).await.unwrap().uuid, "lock_acquired_at": Utc::now().to_string()
                                 }
                             },
                 filter,

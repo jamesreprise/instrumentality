@@ -13,11 +13,10 @@
 //! See [`Data`] for examples of valid data objects.
 
 use crate::config::IConfig;
-use crate::data::*;
 use crate::database::DBHandle;
 use crate::key::Key;
 use crate::response::{Error, Ok};
-use crate::user::User;
+use crate::{data::*, database};
 
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use mongodb::Collection;
@@ -29,8 +28,8 @@ pub async fn add(
     config: IConfig,
 ) -> impl IntoResponse {
     let data = data
-        .verify(&config)
-        .tag(User::user_with_key(&key.key, &db).await.unwrap().uuid)
+        .verify(&config.content_types, &config.presence_types)
+        .tag(database::user_with_key(&key.key, &db).await.unwrap().uuid)
         .process_queue(&db)
         .await;
     let data_coll: Collection<Data> = db.collection("data");

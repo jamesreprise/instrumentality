@@ -38,7 +38,7 @@
 //! }
 //! ```
 
-use crate::database::DBHandle;
+use crate::database::{self, DBHandle};
 use crate::group::*;
 use crate::key::Key;
 use crate::response::{Error, Ok};
@@ -46,10 +46,12 @@ use crate::routes::queue;
 use crate::subject::*;
 
 use axum::{http::StatusCode, response::IntoResponse, Json};
+use chrono::Utc;
 use mongodb::bson::doc;
 use mongodb::Collection;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
@@ -70,7 +72,7 @@ pub async fn create(Json(data): Json<CreateData>, db: DBHandle, key: Key) -> imp
     match data {
         CreateData::CreateSubject { .. } => {
             let subj_coll: Collection<Subject> = db.collection("subjects");
-            if let Some(subject) = Subject::from_subject_create(data, &db, key).await {
+            if let Some(subject) = subject_from_create(data, &db, key).await {
                 if subj_coll.insert_one(&subject, None).await.is_ok() {
                     for platform in subject.profiles.keys() {
                         for id in subject.profiles.get(platform).unwrap() {
@@ -93,7 +95,7 @@ pub async fn create(Json(data): Json<CreateData>, db: DBHandle, key: Key) -> imp
         }
         CreateData::CreateGroup { .. } => {
             let group_coll: Collection<Group> = db.collection("groups");
-            if let Some(group) = Group::from_group_create(data, &db, key).await {
+            if let Some(group) = group_from_create(data, &db, key).await {
                 for s in &group.subjects {
                     let subj_coll: Collection<Subject> = db.collection("subjects");
                     let subject = subj_coll.find_one(doc! {"uuid": s}, None).await.unwrap();
@@ -119,5 +121,41 @@ pub async fn create(Json(data): Json<CreateData>, db: DBHandle, key: Key) -> imp
                 ))
             }
         }
+    }
+}
+
+pub async fn group_from_create(cs: CreateData, db: &DBHandle, key: Key) -> Option<Group> {
+    match cs {
+        CreateData::CreateGroup {
+            name,
+            subjects,
+            description,
+        } => Some(Group {
+            uuid: Uuid::new_v4().to_string(),
+            created_at: Utc::now(),
+            created_by: database::user_with_key(&key.key, db).await.unwrap().uuid,
+            name,
+            subjects,
+            description,
+        }),
+        _ => None,
+    }
+}
+
+pub async fn subject_from_create(cs: CreateData, db: &DBHandle, key: Key) -> Option<Subject> {
+    match cs {
+        CreateData::CreateSubject {
+            name,
+            profiles,
+            description,
+        } => Some(Subject {
+            uuid: Uuid::new_v4().to_string(),
+            created_at: Utc::now(),
+            created_by: database::user_with_key(&key.key, db).await.unwrap().uuid,
+            name,
+            profiles,
+            description,
+        }),
+        _ => None,
     }
 }

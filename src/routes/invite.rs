@@ -16,10 +16,9 @@
 //! }
 //! ```
 
-use crate::database::DBHandle;
+use crate::database::{self, DBHandle};
 use crate::key::Key;
 use crate::response::{Error, InviteResponse};
-use crate::user::User;
 
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use chrono::{DateTime, Utc};
@@ -75,7 +74,7 @@ async fn create_invite(
     let refer_coll: Collection<Referral> = db.collection("referrals");
     refer_coll
         .insert_one(
-            Referral::new(User::user_with_key(&key.key, db).await.unwrap().uuid),
+            Referral::new(database::user_with_key(&key.key, db).await.unwrap().uuid),
             None,
         )
         .await

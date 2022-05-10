@@ -2,6 +2,7 @@
 
 use crate::config::IConfig;
 use crate::data::Data;
+use crate::group::Group;
 use crate::subject::Subject;
 use crate::user::User;
 
@@ -10,8 +11,10 @@ use axum::extract::{FromRequest, RequestParts};
 use axum::response::Response;
 use mongodb::options::{ClientOptions, IndexOptions};
 use mongodb::results::CreateIndexResult;
+use mongodb::Cursor;
 use mongodb::{bson::doc, Client, Collection, Database, IndexModel};
 use std::time::Duration;
+use tokio_stream::StreamExt;
 
 // Now featuring the most cracked handle pool implementation!
 #[derive(Clone)]
@@ -142,5 +145,43 @@ impl<B: Send> FromRequest<B> for DBHandle {
         let db = db_pool.handle();
 
         Ok(db)
+    }
+}
+
+pub async fn user_with_key(key: &str, db: &DBHandle) -> Option<User> {
+    let users_coll: Collection<User> = db.collection("users");
+    let result = users_coll.find_one(doc! {"key": key}, None).await.unwrap();
+    result
+}
+
+pub async fn user_subjects(user: &User, db: &DBHandle) -> Option<Vec<Subject>> {
+    let subj_coll: Collection<Subject> = db.collection("subjects");
+    let cursor: Cursor<Subject> = subj_coll
+        .find(doc! {"created_by": &user.uuid}, None)
+        .await
+        .unwrap();
+
+    let results: Vec<Result<Subject, mongodb::error::Error>> = cursor.collect().await;
+    let subjects: Vec<Subject> = results.into_iter().map(|d| d.unwrap()).collect();
+    if subjects.is_empty() {
+        None
+    } else {
+        Some(subjects)
+    }
+}
+
+pub async fn user_groups(user: &User, db: &DBHandle) -> Option<Vec<Group>> {
+    let group_coll: Collection<Group> = db.collection("groups");
+    let cursor: Cursor<Group> = group_coll
+        .find(doc! {"created_by": &user.uuid}, None)
+        .await
+        .unwrap();
+
+    let results: Vec<Result<Group, mongodb::error::Error>> = cursor.collect().await;
+    let groups: Vec<Group> = results.into_iter().map(|d| d.unwrap()).collect();
+    if groups.is_empty() {
+        None
+    } else {
+        Some(groups)
     }
 }

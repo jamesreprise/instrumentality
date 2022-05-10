@@ -21,6 +21,7 @@
 //!     "response": "OK"
 //! }
 
+use crate::database;
 use crate::database::DBHandle;
 use crate::group::Group;
 use crate::key::Key;
@@ -28,7 +29,6 @@ use crate::response::Error;
 use crate::response::Ok;
 use crate::routes::queue;
 use crate::subject::*;
-use crate::user::User;
 
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use mongodb::bson::doc;
@@ -43,7 +43,7 @@ pub struct DeleteData {
 // This is ugly. Can probably do better than an if-else.
 pub async fn delete(Json(data): Json<DeleteData>, db: DBHandle, key: Key) -> impl IntoResponse {
     // UUID of the requester.
-    let req_uuid = User::user_with_key(&key.key, &db).await.unwrap().uuid;
+    let req_uuid = database::user_with_key(&key.key, &db).await.unwrap().uuid;
     let subj_coll: Collection<Subject> = db.collection("subjects");
     if let Ok(Some(subject)) = subj_coll
         .find_one(doc! {"uuid": &data.uuid, "created_by": &req_uuid}, None)

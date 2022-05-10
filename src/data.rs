@@ -118,7 +118,6 @@
 //! that profile, it's easier to post the entire profile to Instrumentality to determine
 //! changes.
 
-use crate::config::IConfig;
 use crate::database::DBHandle;
 use crate::routes::queue;
 use crate::routes::queue::InternalQueueItem;
@@ -173,14 +172,17 @@ pub enum Data {
 }
 
 impl Data {
-    pub fn verify(&self, config: &IConfig) -> bool {
+    pub fn verify(
+        &self,
+        content_types: &HashMap<String, Vec<String>>,
+        presence_types: &HashMap<String, Vec<String>>,
+    ) -> bool {
         match self {
             Self::Presence {
                 platform,
                 presence_type,
                 ..
-            } => config
-                .presence_types
+            } => presence_types
                 .get(platform)
                 .unwrap()
                 .contains(presence_type),
@@ -188,14 +190,9 @@ impl Data {
                 platform,
                 content_type,
                 ..
-            } => config
-                .content_types
-                .get(platform)
-                .unwrap()
-                .contains(content_type),
+            } => content_types.get(platform).unwrap().contains(content_type),
             Self::Meta { platform, .. } => {
-                config.presence_types.contains_key(platform)
-                    || config.content_types.contains_key(platform)
+                presence_types.contains_key(platform) || content_types.contains_key(platform)
             }
         }
     }
@@ -287,10 +284,14 @@ pub struct Datas {
 }
 
 impl Datas {
-    pub fn verify(self, config: &IConfig) -> Self {
+    pub fn verify(
+        self,
+        content_types: &HashMap<String, Vec<String>>,
+        presence_types: &HashMap<String, Vec<String>>,
+    ) -> Self {
         let mut verified_data = Vec::new();
         for d in self.data {
-            if d.verify(config) {
+            if d.verify(content_types, presence_types) {
                 verified_data.push(d);
             }
         }
