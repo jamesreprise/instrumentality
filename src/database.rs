@@ -1,3 +1,5 @@
+//! Database functions and implementations for Instrumentality.
+
 use crate::config::IConfig;
 use crate::data::Data;
 use crate::subject::Subject;

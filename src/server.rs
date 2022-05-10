@@ -1,3 +1,8 @@
+//! Server functions for building Instrumentality. 
+//! 
+//! We build the tracing, service, router in this module.
+
+
 use crate::config;
 use crate::database;
 use crate::response::Error;
