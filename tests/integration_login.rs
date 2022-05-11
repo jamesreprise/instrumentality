@@ -1,5 +1,7 @@
 //! Ensure you have read the doc comments in common.rs if you are having
 //! difficulty getting tests to work.
+//!
+//! TODO: Macro for env.cleanup().
 
 mod common;
 use common::Environment;

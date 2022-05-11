@@ -17,6 +17,11 @@ cargo build --release
 ## Download
 See <https://github.com/berserksystems/instrumentality/releases/>.
 
+## Installation
+- Move `InstrumentalityExample.toml` to `Instrumentality.toml` and configure appropriately.
+- Generate PEM TLS files `cert.pem` and `privkey.pem` and place in /tls.
+- Run with `cargo run --release` or by executing the downloaded binary.
+
 ## Documentation
 See <https://instrumentality.berserksystems.com/docs/>.
 
