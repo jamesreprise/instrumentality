@@ -39,6 +39,10 @@ impl DBHandle {
     pub fn collection<T>(&self, name: &str) -> Collection<T> {
         self.db.collection::<T>(name)
     }
+
+    pub async fn drop(&self) -> Result<(), mongodb::error::Error> {
+        self.db.drop(None).await
+    }
 }
 
 pub async fn open(config: &IConfig) -> Result<DBPool, Box<dyn std::error::Error>> {
@@ -131,8 +135,8 @@ async fn unique_content_index(
         .await
 }
 
-pub async fn drop_database(database: &Database) {
-    database.drop(None).await.unwrap();
+pub async fn drop_database(database: &DBHandle) {
+    database.drop().await.unwrap();
 }
 
 #[async_trait]

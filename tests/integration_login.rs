@@ -1,95 +1,165 @@
-// //! Ensure you have read the doc comments in common.rs if you are having
-// //! difficulty getting tests to work.
+//! Ensure you have read the doc comments in common.rs if you are having
+//! difficulty getting tests to work.
 
-// mod common;
+mod common;
+use common::Environment;
 
-// use common::prepare_environment;
-// use instrumentality::rocket::async_test;
-// use instrumentality::rocket::http::Status;
+use axum::http::StatusCode;
+use hyper::Body;
+use hyper::Request;
+use tower::Service;
 
-// use rocket::http::Header;
-// // use rocket::local::asynchronous::Client;
+static TEST_ENVIRONMENT_CONFIG: &str = "InstrumentalityTest.toml";
 
-// static TEST_ENVIRONMENT_CONFIG: &str = "InstrumentalityTest.toml";
+/// test_alive tests:
+/// - Instrumentality serves an OK response to a request to the root.
+#[tokio::test]
+async fn test_alive() {
+    let mut env: Environment = Environment::new(TEST_ENVIRONMENT_CONFIG).await;
 
-// /// test_alive tests:
-// /// - Instrumentality serves an OK response to a request to the root.
-// #[async_test]
-// async fn test_alive() {
-//     let (client, _) = prepare_environment(TEST_ENVIRONMENT_CONFIG).await;
-//     let res = client.get("/").dispatch().await;
+    let res = env
+        .app
+        .call(
+            Request::builder()
+                .method("GET")
+                .uri("/")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
 
-//     assert_eq!(res.status(), Status::Ok)
-// }
+    assert_eq!(res.status(), StatusCode::OK);
 
-// /// test_catcher_404 tests:
-// /// - Instrumentality serves a NOT FOUND error to a request to an invalid
-// ///   route i.e. (/404)
-// #[async_test]
-// async fn test_catcher_404() {
-//     use instrumentality::routes::catchers::ErrorResponse;
+    env.cleanup().await;
+}
 
-//     let (client, _) = prepare_environment(TEST_ENVIRONMENT_CONFIG).await;
-//     let res = client.get("/404").dispatch().await;
-//     assert_eq!(res.status(), Status::NotFound);
+/// test_catcher_404 tests:
+/// - Instrumentality serves a NOT FOUND error to a request to an invalid
+///   route i.e. (/404)
+#[tokio::test]
+async fn test_catcher_404() {
+    use instrumentality::response::Error;
 
-//     let er = res.into_json::<ErrorResponse>().await.unwrap();
+    let mut env: Environment = Environment::new(TEST_ENVIRONMENT_CONFIG).await;
 
-//     assert_eq!(er.response, "ERROR".to_string());
-//     assert_eq!(er.error_code, 404);
-// }
+    let res = env
+        .app
+        .call(
+            Request::builder()
+                .method("GET")
+                .uri("/404")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
 
-// /// test_no_key_login tests:
-// /// - Authentication without a X-API-KEY header returns not authorised.
-// #[async_test]
-// async fn test_no_key_login() {
-//     use instrumentality::routes::catchers::ErrorResponse;
+    assert_eq!(res.status(), StatusCode::NOT_FOUND);
 
-//     let (client, _) = prepare_environment(TEST_ENVIRONMENT_CONFIG).await;
+    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
+    let er: Error = serde_json::from_slice(&body).unwrap();
 
-//     let res = client.get("/login").dispatch().await;
-//     let er: ErrorResponse = res.into_json::<ErrorResponse>().await.unwrap();
+    assert_eq!(er.response, "ERROR".to_string());
 
-//     assert_eq!(er.response, "ERROR".to_string());
-//     assert_eq!(er.error_code, 401);
-// }
+    env.cleanup().await;
+}
 
-// /// test_bad_key_login tests:
-// /// - Authentication without a X-API-KEY header returns not authorised.
-// #[async_test]
-// async fn test_bad_key_login() {
-//     use instrumentality::routes::catchers::ErrorResponse;
+/// test_no_key_login tests:
+/// - Authentication without a X-API-KEY header returns not authorised.
+#[tokio::test]
+async fn test_no_key_login() {
+    use instrumentality::response::Error;
 
-//     let (client, _) = prepare_environment(TEST_ENVIRONMENT_CONFIG).await;
+    let mut env: Environment = Environment::new(TEST_ENVIRONMENT_CONFIG).await;
 
-//     let auth_header = Header::new("X-API-KEY", "INVALIDAPIKEY");
+    let res = env
+        .app
+        .call(
+            Request::builder()
+                .method("GET")
+                .uri("/login")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
 
-//     let res = client.get("/login").header(auth_header).dispatch().await;
-//     let er: ErrorResponse = res.into_json::<ErrorResponse>().await.unwrap();
+    assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
 
-//     assert_eq!(er.response, "ERROR".to_string());
-//     assert_eq!(er.error_code, 401);
-// }
+    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
+    let er: Error = serde_json::from_slice(&body).unwrap();
 
-// /// test_authorised_login tests:
-// /// - Authentication of the test user works as expected.
-// /// - Login route returns the correct information:
-// ///     - an OK,
-// ///     - the user info,
-// ///     - empty subjects and groups array
-// #[async_test]
-// async fn test_authorised_login() {
-//     use instrumentality::routes::login::LoginResponse;
+    assert_eq!(er.response, "ERROR".to_string());
 
-//     let (client, user) = prepare_environment(TEST_ENVIRONMENT_CONFIG).await;
+    env.cleanup().await;
+}
 
-//     let auth_header = Header::new("X-API-KEY", user.clone().key);
+/// test_bad_key_login tests:
+/// - Authentication without a X-API-KEY header returns not authorised.
+#[tokio::test]
+async fn test_bad_key_login() {
+    use instrumentality::response::Error;
 
-//     let res = client.get("/login").header(auth_header).dispatch().await;
-//     let lr = res.into_json::<LoginResponse>().await.unwrap();
+    let mut env: Environment = Environment::new(TEST_ENVIRONMENT_CONFIG).await;
 
-//     assert_eq!(lr.response, "OK".to_string());
-//     assert_eq!(lr.user, user.clone());
-//     assert!(lr.subjects.is_empty());
-//     assert!(lr.groups.is_empty());
-// }
+    let res = env
+        .app
+        .call(
+            Request::builder()
+                .method("GET")
+                .header("X-API-KEY", "INVALIDAPIKEY")
+                .uri("/login")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+
+    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
+    let er: Error = serde_json::from_slice(&body).unwrap();
+
+    assert_eq!(er.response, "ERROR".to_string());
+
+    env.cleanup().await;
+}
+
+/// test_authorised_login tests:
+/// - Authentication of the test user works as expected.
+/// - Login route returns the correct information:
+///     - an OK,
+///     - the user info,
+///     - empty subjects and groups array
+#[tokio::test]
+async fn test_authorised_login() {
+    use instrumentality::routes::login::LoginResponse;
+
+    let mut env: Environment = Environment::new(TEST_ENVIRONMENT_CONFIG).await;
+
+    let res = env
+        .app
+        .call(
+            Request::builder()
+                .method("GET")
+                .header("X-API-KEY", &env.user.key)
+                .uri("/login")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(res.status(), StatusCode::OK);
+
+    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
+    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+
+    assert_eq!(lr.response, "OK".to_string());
+    assert_eq!(lr.user, env.user.clone());
+    assert!(lr.subjects.is_empty());
+    assert!(lr.groups.is_empty());
+
+    env.cleanup().await;
+}

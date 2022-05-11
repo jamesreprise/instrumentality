@@ -1,7 +1,7 @@
 //! Error responses.
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Error {
     pub response: String,
     pub text: String,
@@ -16,7 +16,7 @@ impl Error {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 pub struct Ok {
     response: String,
 }
@@ -29,7 +29,7 @@ impl Ok {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 pub struct InviteResponse {
     response: String,
     key: String,
@@ -44,7 +44,7 @@ impl InviteResponse {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 pub struct QueueResponse {
     response: String,
     queue_id: String,
@@ -63,7 +63,7 @@ impl QueueResponse {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 pub struct RegisterResponse {
     response: String,
     user: crate::user::User,
@@ -78,7 +78,7 @@ impl RegisterResponse {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 pub struct ViewResponse {
     response: String,
     view_data: crate::routes::view::ViewData,
@@ -93,7 +93,7 @@ impl ViewResponse {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 pub struct TypesResponse {
     response: String,
     content_types: std::collections::HashMap<String, Vec<String>>,

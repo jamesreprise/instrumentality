@@ -2,7 +2,6 @@
 //!
 //! We build the tracing, service, router in this module.
 
-use crate::config;
 use crate::config::IConfig;
 use crate::database;
 use crate::database::DBPool;
@@ -37,11 +36,7 @@ use tower_http::set_header::SetResponseHeaderLayer;
 use tower_http::BoxError;
 use tracing_subscriber::{prelude::*, EnvFilter};
 
-pub async fn build_server(config: &str) -> (Router, RustlsConfig, SocketAddr) {
-    build_tracing();
-
-    let config = config::open(config).unwrap();
-    tracing::info!("Config file loaded.");
+pub async fn build_server(config: &IConfig) -> (Router, RustlsConfig, SocketAddr) {
     let db_pool = database::open(&config).await.unwrap();
     tracing::info!("Connected to MongoDB.");
 
@@ -57,7 +52,7 @@ pub async fn build_server(config: &str) -> (Router, RustlsConfig, SocketAddr) {
     (app, tls_config, addr)
 }
 
-fn build_tracing() {
+pub fn build_tracing() {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .with(EnvFilter::new("INFO"))

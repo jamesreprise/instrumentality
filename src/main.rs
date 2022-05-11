@@ -11,7 +11,12 @@ pub mod user;
 
 #[tokio::main]
 async fn main() {
-    let (app, tls_config, addr) = server::build_server("Instrumentality.toml").await;
+    server::build_tracing();
+
+    let config = config::open("Instrumentality.toml").unwrap();
+    tracing::info!("Config file loaded.");
+
+    let (app, tls_config, addr) = server::build_server(&config).await;
 
     let server = axum_server::bind_rustls(addr, tls_config).serve(app.into_make_service());
 
