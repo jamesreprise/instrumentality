@@ -41,22 +41,39 @@ jobs:
       with:
         mongodb-username: instrumentality
         mongodb-password: supercharge
-        mongodb-db: instrumentality-test
         
     # Not using environment variables.
     - name: Config File Creation
       run: |
           touch InstrumentalityTest.toml
-          echo '[mongodb]
-           hosts = "127.0.0.1"
-           port = "27017"
-           user = "instrumentality"
-           password = "supercharge"
-           database = "instrumentality_test"
-           [content_types]
-           platform1 = ["blog", "video"]
-           [presence_types]
-           platform2 = ["livestream"]
+          echo '[content_types]
+          instagram = ["post", "story", "live"]
+          twitter = ["tweet", "like", "retweet", "story"]
+          last_fm = ["scrobble"]
+          twitch_tv = ["stream_start", "video", "stream_end"]
+
+          [presence_types]
+          twitter = ["follower_count_increase"]
+          last_fm = ["now_playing"]
+          twitch_tv = ["live"]
+
+          [mongodb]
+          hosts = "127.0.0.1"
+          port = "27017"
+          user = "instrumentality"
+          password = "supercharge"
+          database = "instrumentality-test"
+
+          [settings]
+          log_level = "INFO"
+
+          [network]
+          address = "127.0.0.1"
+          port = "8000"
+
+          [tls]
+          cert = "tls/cert.pem"
+          key = "tls/privkey.pem"
            ' >> InstrumentalityTest.toml
 
     - name: Rust Toolchain
