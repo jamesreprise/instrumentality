@@ -74,7 +74,7 @@ jobs:
           [tls]
           cert = "tls/cert.pem"
           key = "tls/privkey.pem"
-           ' >> InstrumentalityTest.toml
+          ' >> InstrumentalityTest.toml
 
     - name: Rust Toolchain
       uses: actions-rs/toolchain@v1
