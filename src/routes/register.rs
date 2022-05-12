@@ -7,7 +7,7 @@
 //! A register request takes the form:
 //! ```json
 //! {
-//!     "ref_code": String,
+//!     "code": String,
 //!     "name": String,
 //! }
 //! ```
@@ -24,7 +24,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RegisterRequest {
-    ref_code: String,
+    code: String,
     name: String,
 }
 
@@ -56,10 +56,7 @@ pub async fn register(Json(req): Json<RegisterRequest>, db: DBHandle) -> impl In
 async fn invite_valid(req: &RegisterRequest, db: &DBHandle) -> bool {
     let refs_coll: Collection<Referral> = db.collection("referrals");
     let result = refs_coll
-        .find_one(
-            doc! {"ref_code": req.ref_code.as_str(), "used" : false},
-            None,
-        )
+        .find_one(doc! {"code": req.code.as_str(), "used" : false}, None)
         .await;
     matches!(result, Ok(Some(_)))
 }
@@ -96,7 +93,7 @@ async fn use_invite(
     let refs_coll: Collection<Referral> = db.collection("referrals");
     let result = refs_coll
         .find_one_and_update(
-            doc! {"ref_code": req.ref_code.as_str(), "used": false},
+            doc! {"code": req.code.as_str(), "used": false},
             doc! {"$set": {"used": true, "used_by": &user.uuid}},
             None,
         )
