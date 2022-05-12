@@ -1,5 +1,5 @@
-![Instrumentality](https://instrumentality.berserksystems.com/header.png#gh-dark-mode-only)
-![Instrumentality](https://instrumentality.berserksystems.com/light-header.png#gh-light-mode-only)
+![Instrumentality Dark](./assets/dark-header.png#gh-dark-mode-only)
+![Instrumentality Light](./assets/light-header.png#gh-light-mode-only)
 ---
 Instrumentality facilitates the aggregation of data from any source into a single database under
 a common set of schemas.
