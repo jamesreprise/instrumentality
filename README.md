@@ -63,15 +63,16 @@ This server is a backend and intentionally only accepts and returns JSON.
 
 ### Future
 #### Minor
-- [ ] Better /queue.
+- [ ] Hot and cold `/queue`
 - [ ] Live config reloading.
-- [ ] /leaderboard.
-- [ ] Channels & webhooks
+- [ ] `/leaderboard`.
+- [ ] Basic analytics & dashboard on `/`.
+- [ ] Channels & webhooks.
 
 #### Major
-- [ ] Handling discrepencies/byzantine platforms through consensus.
 - [ ] Sharded database.
 - [ ] Admin tooling.
 - [ ] Example front end.
-- [ ] Object storage.
-- [ ] GraphQL for /view.
+- [ ] CDN caching media.
+- [ ] GraphQL for `/view`.
+- [ ] Handling discrepencies/byzantine platforms through consensus.

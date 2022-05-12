@@ -1,4 +1,4 @@
-name: Instrumentality Build & Test
+name: Instrumentality Build then Test
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Build
+    name: Build then Test
     runs-on: ubuntu-latest
 
     steps:
@@ -28,20 +28,16 @@ jobs:
         command: build
         args: --release
 
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Git Checkout
-      uses: actions/checkout@v3
-
     - name: Start MongoDB
       uses: supercharge/mongodb-github-action@1.7.0
       with:
         mongodb-username: instrumentality
         mongodb-password: supercharge
-        
+
+    - name: Create TLS certificates.
+      run: |
+          mkdir tls
+          openssl req -x509 -newkey rsa:4096 -keyout tls/privkey.pem -out tls/cert.pem -days 365 -nodes -subj '/CN=localhost'
     # Not using environment variables.
     - name: Config File Creation
       run: |
@@ -75,13 +71,6 @@ jobs:
           cert = "tls/cert.pem"
           key = "tls/privkey.pem"
           ' >> InstrumentalityTest.toml
-
-    - name: Rust Toolchain
-      uses: actions-rs/toolchain@v1
-      with: 
-        toolchain: stable
-        override: true
-        components: rustfmt
 
     - name: Test
       uses: actions-rs/cargo@v1

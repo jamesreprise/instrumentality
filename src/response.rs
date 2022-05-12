@@ -50,15 +50,17 @@ pub struct QueueResponse {
     queue_id: String,
     username: String,
     platform: String,
+    platform_id: String,
 }
 
 impl QueueResponse {
-    pub fn new(queue_id: String, username: String, platform: String) -> Self {
+    pub fn new(queue_id: String, username: String, platform: String, platform_id: String) -> Self {
         Self {
             response: "OK".to_string(),
             queue_id,
             username,
             platform,
+            platform_id,
         }
     }
 }

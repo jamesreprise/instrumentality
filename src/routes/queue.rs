@@ -177,6 +177,7 @@ pub async fn queue(
                     q_item.queue_id,
                     username,
                     q_item.platform,
+                    q_item.platform_id,
                 )),
             ))
         } else {
