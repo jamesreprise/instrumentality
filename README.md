@@ -8,7 +8,7 @@ a common set of schemas.
 Data should belong to people and those they choose to share it with. The order in which posts are presented should be changed from reverse chronological order (latest first) only when the user expressly wishes to do so.
 
 ## Building from Source
-```
+```bash
 git clone https://github.com/berserksystems/instrumentality.git
 cd instrumentality/
 cargo build --release
@@ -24,7 +24,15 @@ See <https://github.com/berserksystems/instrumentality/releases/>.
 - Run with `cargo run --release` or by executing the downloaded binary.
 
 ## Documentation
-See <https://instrumentality.berserksystems.com/docs/>.
+For server administrators: <https://instrumentality.berserksystems.com/docs/>.
+For developers wishing to contribute: 
+```bash
+git clone https://github.com/berserksystems/instrumentality.git
+cd instrumentality/
+cargo doc --no-deps
+```
+Then open `/target/doc/instrumentality/index.html` in a browser.
+
 
 ## Architecture
 This is an Axum web server, the core logic of which can be seen in [server.rs](src/server.rs). All information is written to a MongoDB cluster, seen in [mdb.rs](src/mdb.rs). 

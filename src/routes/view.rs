@@ -25,12 +25,14 @@ use tokio_stream::StreamExt;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ViewData {
+    response: String,
     subject_data: Vec<SubjectData>,
 }
 
 impl ViewData {
     fn new() -> Self {
         Self {
+            response: "OK".to_string(),
             subject_data: Vec::new(),
         }
     }
@@ -53,12 +55,14 @@ impl SubjectData {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct PlatformData {
+    platform: String,
     profiles: Vec<ProfileData>,
 }
 
 impl PlatformData {
-    fn new() -> Self {
+    fn new(platform: String) -> Self {
         Self {
+            platform,
             profiles: Vec::new(),
         }
     }
@@ -135,7 +139,7 @@ pub async fn view(
     for s in subjects {
         let mut subject_data: SubjectData = SubjectData::new(&s);
         for platform_name in s.profiles.keys() {
-            let mut platform_data = PlatformData::new();
+            let mut platform_data = PlatformData::new(platform_name.to_string());
             for platform_id in s.profiles.get(platform_name).unwrap() {
                 let f = filter.clone();
                 let meta_data = data_coll

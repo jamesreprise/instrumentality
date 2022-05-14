@@ -114,3 +114,18 @@ impl TypesResponse {
         }
     }
 }
+
+#[derive(Deserialize, Serialize)]
+pub struct ResetResponse {
+    response: String,
+    new_key: String,
+}
+
+impl ResetResponse {
+    pub fn new(new_key: String) -> Self {
+        Self {
+            response: "OK".to_string(),
+            new_key,
+        }
+    }
+}

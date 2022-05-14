@@ -15,6 +15,7 @@ use crate::routes::invite::*;
 use crate::routes::login::*;
 use crate::routes::queue::*;
 use crate::routes::register::*;
+use crate::routes::reset::*;
 use crate::routes::types::*;
 use crate::routes::update::*;
 use crate::routes::view::*;
@@ -92,6 +93,7 @@ fn build_app(config: IConfig, db_pool: DBPool) -> Router {
         .route("/delete", post(delete))
         .route("/update", post(update))
         .route("/add", post(add))
+        .route("/reset", get(reset))
         .layer(service_builder)
         .fallback(default.into_service())
 }

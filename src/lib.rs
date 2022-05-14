@@ -1,13 +1,13 @@
 //! This is the API documentation for the Instrumentality server. It contains technical
-//! details about the internal operation of instrumentality, and is solely aimed at
+//! details about the internal operation of Instrumentality, and is solely aimed at
 //! developers looking to understand or extend the servers capabilities.
 //!
 //! You can find documentation on installation and running the server at:
-//! - <https://github.com/berserksystems/instrumentality.git>
+//! - <https://instrumentality.berserksystems.com/docs/>
 //!
 //! Instrumentality makes heavy use of [Axum] and [MongoDB]. MongoDB in particular is
 //! probably not the correct choice for this system at scale, and a re-write using
-//! Postgres would be more performant but less flexible.
+//! PostgreSQL would likely be more performant.
 //!
 //! [MongoDB]: https://www.mongodb.com/
 //! [Axum]: https://github.com/tokio-rs/axum/
