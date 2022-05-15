@@ -9,7 +9,6 @@ use crate::response::Error;
 use crate::routes::add::*;
 use crate::routes::create::*;
 use crate::routes::default::*;
-use crate::routes::delete::*;
 use crate::routes::frontpage::*;
 use crate::routes::invite::*;
 use crate::routes::login::*;

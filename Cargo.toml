@@ -10,6 +10,8 @@ license = "AGPL-3.0"
 license_file = "LICENCE"
 repository = "https://github.com/berserksystems/instrumentality/"
 
+exclude = ["assets/", ".github/"]
+
 [[bin]]
 name = "instrumentality"
 
