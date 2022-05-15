@@ -2,7 +2,7 @@
 //!
 //! The /invite route is implemented here.
 //!
-//! See endpoint documentation at https://instrumentality.berserksystems.com/docs/invite/.
+//! See endpoint documentation at <https://docs.berserksystems.com/endpoints/invite/>.
 
 use crate::database::{self, DBHandle};
 use crate::key::Key;

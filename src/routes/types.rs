@@ -2,7 +2,7 @@
 //!
 //! The /types route is implemented here.
 //!
-//! See endpoint documentation at https://instrumentality.berserksystems.com/docs/types/.
+//! See endpoint documentation at <https://docs.berserksystems.com/endpoints/types/>.
 
 use crate::config::IConfig;
 use crate::response::TypesResponse;

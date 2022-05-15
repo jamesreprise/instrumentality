@@ -2,7 +2,7 @@
 //!
 //! The /login route is implemented here.
 //!
-//! See endpoint documentation at https://instrumentality.berserksystems.com/docs/login/.
+//! See endpoint documentation at <https://docs.berserksystems.com/endpoints/login/>.
 
 use crate::database;
 use crate::database::DBHandle;

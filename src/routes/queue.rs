@@ -1,6 +1,6 @@
 //! Route for the queue.
 //!
-//! See endpoint documentation at https://instrumentality.berserksystems.com/docs/queue/.
+//! See endpoint documentation at <https://docs.berserksystems.com/endpoints/queue/>.
 //!
 //! The queue is a looping structure containing all the profiles currently
 //! being tracked by Instrumentality. Profiles are only being tracked if they

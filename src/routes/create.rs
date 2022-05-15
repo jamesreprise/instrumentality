@@ -2,7 +2,7 @@
 //!
 //! The /create route is implemented here.
 //!
-//! See endpoint documentation at https://instrumentality.berserksystems.com/docs/create/.
+//! See endpoint documentation at <https://docs.berserksystems.com/endpoints/create/>.
 
 use crate::database::{self, DBHandle};
 use crate::group::*;

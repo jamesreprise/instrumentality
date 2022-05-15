@@ -2,7 +2,7 @@
 //!
 //! The /view route is implemented here.
 //!
-//! See endpoint documentation at https://instrumentality.berserksystems.com/docs/view/.
+//! See endpoint documentation at <https://docs.berserksystems.com/endpoints/view/>.
 
 use crate::data::*;
 use crate::database::DBHandle;

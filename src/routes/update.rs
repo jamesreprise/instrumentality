@@ -2,7 +2,7 @@
 //!
 //! The /update route is implemented here.
 //!
-//! See endpoint documentation at https://instrumentality.berserksystems.com/docs/register/.
+//! See endpoint documentation at <https://docs.berserksystems.com/endpoints/register/>.
 
 use crate::database::{self, DBHandle};
 use crate::group::Group;

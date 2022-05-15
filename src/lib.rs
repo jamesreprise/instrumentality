@@ -2,8 +2,7 @@
 //! details about the internal operation of Instrumentality, and is solely aimed at
 //! developers looking to understand or extend the servers capabilities.
 //!
-//! You can find documentation on installation and running the server at:
-//! - <https://instrumentality.berserksystems.com/docs/>
+//! You can find documentation on installation and running the server at: <https://docs.berserksystems.com/>
 //!
 //! Instrumentality makes heavy use of [Axum] and [MongoDB]. MongoDB in particular is
 //! probably not the correct choice for this system at scale, and a re-write using

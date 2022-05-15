@@ -2,7 +2,7 @@
 //!
 //! The /add route is implemented here.
 //!
-//! See endpoint documentation at https://instrumentality.berserksystems.com/docs/add/.
+//! See endpoint documentation at <https://docs.berserksystems.com/endpoints/add/>.
 //!
 //! See [`Data`] for examples of valid data objects.
 
