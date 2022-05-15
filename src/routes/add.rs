@@ -2,13 +2,7 @@
 //!
 //! The /add route is implemented here.
 //!
-//! All data to be added must be formatted as below.
-//! ```json
-//! {"data": [..]}
-//! ```
-//! or if the data is for a queue job:
-//! ```json
-//! {"queue_id": <UUIDv4>, "data": [..]}
+//! See endpoint documentation at https://instrumentality.berserksystems.com/docs/add/.
 //!
 //! See [`Data`] for examples of valid data objects.
 

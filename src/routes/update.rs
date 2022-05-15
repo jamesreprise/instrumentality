@@ -1,28 +1,8 @@
 //! Route for updating subjects and groups.
 //!
-//! The update route is implemented here.
+//! The /update route is implemented here.
 //!
-//! When you update a subject or a group, you MUST post all their information.
-//! No old data is merged.
-//!
-//! An example update request is given below:
-//! ```json
-//! {
-//!     "uuid": "<UUIDv4>",
-//!     "name": "Subject1",
-//!     "profiles":
-//!         {
-//!          "twitter": ["subject1", "subject1_private"],
-//!          "instagram": ["subject1pics", "subject1pics_private"]
-//!         },
-//!     "description": "Everyone's favourite subject?"
-//! }
-//! ```
-//! Which yields the response:
-//! ```json
-//! {
-//!     "response": "OK"
-//! }
+//! See endpoint documentation at https://instrumentality.berserksystems.com/docs/register/.
 
 use crate::database::{self, DBHandle};
 use crate::group::Group;

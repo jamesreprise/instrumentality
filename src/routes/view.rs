@@ -2,12 +2,7 @@
 //!
 //! The /view route is implemented here.
 //!
-//! View is a type of search on the data held in the system.
-//! The most typical search will be looking up recent posts on all platforms
-//! for a specific subject/group/profile.
-//!
-//! We can think of a search as a series of scope 'broadeners' and 'narrowers'.
-//! Currently, every subject is a 'broadener', every other parameter is a 'narrower'.
+//! See endpoint documentation at https://instrumentality.berserksystems.com/docs/view/.
 
 use crate::data::*;
 use crate::database::DBHandle;

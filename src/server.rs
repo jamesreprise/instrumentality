@@ -27,7 +27,7 @@ use axum::{
     error_handling::HandleErrorLayer,
     extract::Extension,
     handler::Handler,
-    routing::{get, post},
+    routing::{delete, get, post},
     Json, Router,
 };
 use axum_server::tls_rustls::RustlsConfig;
@@ -90,7 +90,7 @@ fn build_app(config: IConfig, db_pool: DBPool) -> Router {
         .route("/invite", get(invite))
         .route("/register", post(register))
         .route("/create", post(create))
-        .route("/delete", post(delete))
+        .route("/delete", delete(crate::routes::delete::delete))
         .route("/update", post(update))
         .route("/add", post(add))
         .route("/reset", get(reset))

@@ -1,3 +1,9 @@
+//! Route for resetting an API key for Instrumentality.
+//!
+//! The /reset route is implemented here.
+//!
+//! See endpoint documentation at https://instrumentality.berserksystems.com/docs/reset/.
+
 use crate::database::DBHandle;
 use crate::key::Key;
 use crate::response::{Error, ResetResponse};

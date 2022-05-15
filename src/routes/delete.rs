@@ -2,24 +2,7 @@
 //!
 //! The /delete route is implemented here.
 //!
-//! Only [`Subject`]s and [`Group`]s can be deleted as they exist solely within
-//! Instrumentality. We cannot delete profiles (or data about them) as they
-//! exist elsewhere.
-//!
-//! Only the user who created a Subject or Group can delete them, and do so
-//! using their UUID.
-//!
-//! A valid /delete request takes the form:
-//! ```json
-//! {
-//!     "uuid": "<UUIDv4>"
-//! }
-//! ```
-//! Which would yield the response:
-//! ```json
-//! {
-//!     "response": "OK"
-//! }
+//! See endpoint documentation at https://instrumentality.berserksystems.com/docs/delete/.
 
 use crate::database;
 use crate::database::DBHandle;

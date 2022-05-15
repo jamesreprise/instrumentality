@@ -2,15 +2,7 @@
 //!
 //! The /register route is implemented here.
 //!
-//! This route registers a user for an API key, not a user/pass combo.
-//!
-//! A register request takes the form:
-//! ```json
-//! {
-//!     "code": String,
-//!     "name": String,
-//! }
-//! ```
+//! See endpoint documentation at https://instrumentality.berserksystems.com/docs/register/.
 
 use crate::database::DBHandle;
 use crate::response::{Error, RegisterResponse};

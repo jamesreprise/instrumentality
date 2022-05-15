@@ -2,10 +2,7 @@
 //!
 //! The /login route is implemented here.
 //!
-//! You can login by calling /login with a valid API Key in your request
-//! headers under "x-api-key".
-//!
-//! This returns user information if the given key is valid.
+//! See endpoint documentation at https://instrumentality.berserksystems.com/docs/login/.
 
 use crate::database;
 use crate::database::DBHandle;

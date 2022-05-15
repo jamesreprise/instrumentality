@@ -16,7 +16,6 @@ use mongodb::{bson::doc, Client, Collection, Database, IndexModel};
 use std::time::Duration;
 use tokio_stream::StreamExt;
 
-// Now featuring the most cracked handle pool implementation!
 #[derive(Clone)]
 pub struct DBPool {
     client: Client,

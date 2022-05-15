@@ -1,4 +1,4 @@
-//! Functions for interpretation of configurations.
+//! Functions for the configuration file.
 
 use axum::async_trait;
 use axum::extract::{FromRequest, RequestParts};
