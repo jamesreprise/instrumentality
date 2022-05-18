@@ -19,6 +19,8 @@ use instrumentality::user::User;
 use axum::Router;
 use uuid::Uuid;
 
+pub const TEST_ENVIRONMENT_CONFIG: &str = "InstrumentalityTest.toml";
+
 pub struct Environment {
     pub app: Router,
     pub user: User,
@@ -37,7 +39,7 @@ impl Environment {
         Self { app, user, config }
     }
 
-    pub async fn cleanup(&self) {
+    pub async fn cleanup(self) {
         let database = database::open(&self.config).await.unwrap();
         database::drop_database(&database.handle()).await;
     }

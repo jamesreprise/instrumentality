@@ -640,7 +640,7 @@ dependencies = [
 
 [[package]]
 name = "instrumentality"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "axum",
  "axum-server",
@@ -649,6 +649,7 @@ dependencies = [
  "getrandom",
  "hyper",
  "hyper-tls",
+ "mime",
  "mongodb",
  "regex",
  "serde",

@@ -16,8 +16,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RegisterRequest {
-    code: String,
-    name: String,
+    pub code: String,
+    pub name: String,
 }
 
 #[derive(Debug)]
@@ -63,7 +63,7 @@ async fn username_not_taken(req: &RegisterRequest, db: &DBHandle) -> bool {
 
 async fn register_user(req: &RegisterRequest, db: &DBHandle) -> Result<User, RegisterError> {
     let user = User::new(&req.name);
-    let result = use_invite(&user, req, &db).await;
+    let result = use_invite(&user, req, db).await;
     if result.is_ok() {
         let users_coll: Collection<User> = db.collection("users");
 

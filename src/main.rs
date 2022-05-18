@@ -17,12 +17,7 @@ async fn main() {
     server::build_tracing();
 
     let config = config::open("Instrumentality.toml");
-    if let Err(_) = config {
-        tracing::info!("Couldn't load \"Instrumentality.toml\", creating an example at InstrumentalityExample.toml.");
-        let mut file = File::create("InstrumentalityExample.toml").unwrap();
-        file.write_all(EXAMPLE_CONFIG_FILE).unwrap();
-    } else {
-        let config = config.unwrap();
+    if let Ok(config) = config {
         tracing::info!("Config file loaded.");
 
         let (app, tls_config, addr) = server::build_server(&config).await;
@@ -31,6 +26,10 @@ async fn main() {
 
         tracing::info!("READY: https://{:?}.", addr);
         server.await.unwrap();
+    } else {
+        tracing::info!("Couldn't load \"Instrumentality.toml\", creating an example at InstrumentalityExample.toml.");
+        let mut file = File::create("InstrumentalityExample.toml").unwrap();
+        file.write_all(EXAMPLE_CONFIG_FILE).unwrap();
     }
 }
 

@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DeleteData {
-    uuid: String,
+    pub uuid: String,
 }
 
 // This is ugly. Can probably do better than an if-else.

@@ -57,18 +57,11 @@ async fn create_invite(
     key: Key,
     db: &DBHandle,
 ) -> Result<(StatusCode, Json<InviteResponse>), (StatusCode, Json<Error>)> {
-    let code = Referral::new_code();
-
+    let referral = Referral::new(database::user_with_key(&key.key, db).await.unwrap().uuid);
     let refer_coll: Collection<Referral> = db.collection("referrals");
-    refer_coll
-        .insert_one(
-            Referral::new(database::user_with_key(&key.key, db).await.unwrap().uuid),
-            None,
-        )
-        .await
-        .unwrap();
+    refer_coll.insert_one(&referral, None).await.unwrap();
 
-    Ok((StatusCode::OK, Json(InviteResponse::new(code))))
+    Ok((StatusCode::OK, Json(InviteResponse::new(referral.code))))
 }
 
 #[cfg(test)]

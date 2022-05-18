@@ -97,7 +97,7 @@ where
         .chars()
         .filter(|c| vec!['[', ']'].contains(c))
         .collect::<String>();
-    let v = nb.split(",").map(|s| s.into()).collect::<Vec<String>>();
+    let v = nb.split(',').map(|s| s.into()).collect::<Vec<String>>();
 
     Ok(v)
 }

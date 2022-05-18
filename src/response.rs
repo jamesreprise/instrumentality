@@ -18,7 +18,7 @@ impl Error {
 
 #[derive(Deserialize, Serialize)]
 pub struct Ok {
-    response: String,
+    pub response: String,
 }
 
 impl Ok {
@@ -29,28 +29,34 @@ impl Ok {
     }
 }
 
+impl Default for Ok {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Deserialize, Serialize)]
 pub struct InviteResponse {
-    response: String,
-    key: String,
+    pub response: String,
+    pub code: String,
 }
 
 impl InviteResponse {
-    pub fn new(key: String) -> Self {
+    pub fn new(code: String) -> Self {
         Self {
             response: "OK".to_string(),
-            key,
+            code,
         }
     }
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct QueueResponse {
-    response: String,
-    queue_id: String,
-    username: String,
-    platform: String,
-    platform_id: String,
+    pub response: String,
+    pub queue_id: String,
+    pub username: String,
+    pub platform: String,
+    pub platform_id: String,
 }
 
 impl QueueResponse {
@@ -67,8 +73,8 @@ impl QueueResponse {
 
 #[derive(Deserialize, Serialize)]
 pub struct RegisterResponse {
-    response: String,
-    user: crate::user::User,
+    pub response: String,
+    pub user: crate::user::User,
 }
 
 impl RegisterResponse {
@@ -82,8 +88,8 @@ impl RegisterResponse {
 
 #[derive(Deserialize, Serialize)]
 pub struct ViewResponse {
-    response: String,
-    view_data: crate::routes::view::ViewData,
+    pub response: String,
+    pub view_data: crate::routes::view::ViewData,
 }
 
 impl ViewResponse {
@@ -97,9 +103,9 @@ impl ViewResponse {
 
 #[derive(Deserialize, Serialize)]
 pub struct TypesResponse {
-    response: String,
-    content_types: std::collections::HashMap<String, Vec<String>>,
-    presence_types: std::collections::HashMap<String, Vec<String>>,
+    pub response: String,
+    pub content_types: std::collections::HashMap<String, Vec<String>>,
+    pub presence_types: std::collections::HashMap<String, Vec<String>>,
 }
 
 impl TypesResponse {
@@ -117,8 +123,8 @@ impl TypesResponse {
 
 #[derive(Deserialize, Serialize)]
 pub struct ResetResponse {
-    response: String,
-    new_key: String,
+    pub response: String,
+    pub new_key: String,
 }
 
 impl ResetResponse {
@@ -126,6 +132,29 @@ impl ResetResponse {
         Self {
             response: "OK".to_string(),
             new_key,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct LoginResponse {
+    pub response: String,
+    pub user: crate::user::User,
+    pub subjects: Vec<crate::subject::Subject>,
+    pub groups: Vec<crate::group::Group>,
+}
+
+impl LoginResponse {
+    pub fn new(
+        user: crate::user::User,
+        subjects: Vec<crate::subject::Subject>,
+        groups: Vec<crate::group::Group>,
+    ) -> Self {
+        Self {
+            response: "OK".to_string(),
+            user,
+            subjects,
+            groups,
         }
     }
 }

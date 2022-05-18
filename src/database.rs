@@ -56,7 +56,7 @@ pub async fn open(config: &IConfig) -> Result<DBPool, Box<dyn std::error::Error>
     mongo_options.heartbeat_freq = Some(Duration::new(1, 0));
     mongo_options.server_selection_timeout = Some(Duration::new(1, 0));
     let mongo_client = Client::with_options(mongo_options).unwrap();
-    let database = mongo_client.database(&database);
+    let database = mongo_client.database(database);
 
     // It is only at this point that MongoDB actually makes a connection.
     database

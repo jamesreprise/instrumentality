@@ -86,7 +86,7 @@ pub struct InternalQueueItem {
     pub last_processed: DateTime<Utc>,
     pub lock_holder: Option<String>, // None means not locked.
     pub lock_acquired_at: Option<DateTime<Utc>>,
-    pub references: u128,
+    pub references: u64,
     pub confirmed_id: bool,
 }
 
@@ -122,7 +122,7 @@ where
         .chars()
         .filter(|c| vec!['[', ']'].contains(c))
         .collect::<String>();
-    let v = nb.split(",").map(|s| s.into()).collect::<Vec<String>>();
+    let v = nb.split(',').map(|s| s.into()).collect::<Vec<String>>();
 
     Ok(v)
 }
@@ -222,7 +222,7 @@ pub async fn process(
         // and if so...
         if find_result.is_some() {
             // Remove the temporary username queue item...
-            remove_queue_item(&username, platform, db).await;
+            remove_queue_item(username, platform, db).await;
             // and either merge the username with the already existing queue item
             // with that name or create a new one with the platform id.
             add_queue_item(id, platform, db, true).await;
