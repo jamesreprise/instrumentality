@@ -43,15 +43,12 @@ jobs:
       run: |
           touch InstrumentalityTest.toml
           echo '[content_types]
-          instagram = ["post", "story", "live"]
-          twitter = ["tweet", "like", "retweet", "story"]
-          last_fm = ["scrobble"]
-          twitch_tv = ["stream_start", "video", "stream_end"]
-
+          PLATFORM_1 = ["post", "story", "live"]
+          PLATFORM_2 = ["scrobble"]
+      
           [presence_types]
-          twitter = ["follower_count_increase"]
-          last_fm = ["now_playing"]
-          twitch_tv = ["live"]
+          PLATFORM_2 = ["listening_now"]
+          PLATFORM_3 = ["streaming"]
 
           [mongodb]
           hosts = "127.0.0.1"

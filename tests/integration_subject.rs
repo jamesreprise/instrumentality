@@ -23,7 +23,7 @@ async fn test_subject_creation() {
     let mut env: Environment = Environment::new(TEST_ENVIRONMENT_CONFIG).await;
     let mut profiles: HashMap<String, Vec<String>> = HashMap::new();
     profiles.insert(
-        "platform1".to_string(),
+        "PLATFORM_1".to_string(),
         vec!["user1".to_string(), "user1_priv".to_string()],
     );
     let new_subject = CreateData::CreateSubject {
@@ -76,7 +76,7 @@ async fn test_subject_creation() {
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
     assert!(
-        lr.subjects[0].profiles.get("platform1").unwrap()
+        lr.subjects[0].profiles.get("PLATFORM_1").unwrap()
             == &vec!["user1".to_string(), "user1_priv".to_string()]
     );
     assert!(lr.groups.is_empty());
@@ -95,7 +95,7 @@ async fn test_subject_bad_key_creation() {
     let mut env: Environment = Environment::new(TEST_ENVIRONMENT_CONFIG).await;
     let mut profiles: HashMap<String, Vec<String>> = HashMap::new();
     profiles.insert(
-        "platform1".to_string(),
+        "PLATFORM_1".to_string(),
         vec!["user1".to_string(), "user1_priv".to_string()],
     );
     let new_subject = CreateData::CreateSubject {
@@ -146,7 +146,7 @@ async fn test_subject_deletion() {
     let mut env: Environment = Environment::new(TEST_ENVIRONMENT_CONFIG).await;
     let mut profiles: HashMap<String, Vec<String>> = HashMap::new();
     profiles.insert(
-        "platform1".to_string(),
+        "PLATFORM_1".to_string(),
         vec!["user1".to_string(), "user1_priv".to_string()],
     );
     let new_subject = CreateData::CreateSubject {
@@ -199,7 +199,7 @@ async fn test_subject_deletion() {
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
     assert!(
-        lr.subjects[0].profiles.get("platform1").unwrap()
+        lr.subjects[0].profiles.get("PLATFORM_1").unwrap()
             == &vec!["user1".to_string(), "user1_priv".to_string()]
     );
     assert!(lr.groups.is_empty());
@@ -267,7 +267,7 @@ async fn test_subject_update() {
     let mut env: Environment = Environment::new(TEST_ENVIRONMENT_CONFIG).await;
     let mut profiles: HashMap<String, Vec<String>> = HashMap::new();
     profiles.insert(
-        "platform1".to_string(),
+        "PLATFORM_1".to_string(),
         vec!["user1".to_string(), "user1_priv".to_string()],
     );
     let new_subject = CreateData::CreateSubject {
@@ -320,15 +320,15 @@ async fn test_subject_update() {
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
     assert!(
-        lr.subjects[0].profiles.get("platform1").unwrap()
+        lr.subjects[0].profiles.get("PLATFORM_1").unwrap()
             == &vec!["user1".to_string(), "user1_priv".to_string()]
     );
     assert!(lr.groups.is_empty());
 
     let mut profiles: HashMap<String, Vec<String>> = HashMap::new();
-    profiles.insert("platform1".to_string(), vec!["user1".to_string()]);
+    profiles.insert("PLATFORM_1".to_string(), vec!["user1".to_string()]);
     profiles.insert(
-        "platform2".to_string(),
+        "PLATFORM_2".to_string(),
         vec!["user1_on_platform2".to_string()],
     );
     let updated_subject = UpdateData::UpdateSubject {
@@ -377,9 +377,9 @@ async fn test_subject_update() {
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
-    assert!(lr.subjects[0].profiles.get("platform1").unwrap() == &vec!["user1".to_string()]);
+    assert!(lr.subjects[0].profiles.get("PLATFORM_1").unwrap() == &vec!["user1".to_string()]);
     assert!(
-        lr.subjects[0].profiles.get("platform2").unwrap()
+        lr.subjects[0].profiles.get("PLATFORM_2").unwrap()
             == &vec!["user1_on_platform2".to_string()]
     );
     assert!(lr.groups.is_empty());
