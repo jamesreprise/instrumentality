@@ -386,3 +386,75 @@ async fn test_subject_update() {
 
     env.cleanup().await;
 }
+
+/// test_subject_creation tests:
+/// - Authentication of the test user works as expected.
+/// - Subject is created upon post request.
+/// - Subject can be seen via /login as provided with no changes.
+#[tokio::test]
+async fn test_subject_bad_platform_creation() {
+    use instrumentality::response::Error;
+    use instrumentality::response::LoginResponse;
+    use instrumentality::routes::create::CreateData;
+    use std::collections::HashMap;
+
+    let mut env: Environment = Environment::new(TEST_ENVIRONMENT_CONFIG).await;
+    let mut profiles: HashMap<String, Vec<String>> = HashMap::new();
+    profiles.insert(
+        "BADPLATFORM".to_string(),
+        vec!["user1".to_string(), "user1_priv".to_string()],
+    );
+    let new_subject = CreateData::CreateSubject {
+        name: "test".to_string(),
+        profiles,
+        description: None,
+    };
+    let res = env
+        .app
+        .call(
+            Request::builder()
+                .method("POST")
+                .uri("/create")
+                .header("X-API-KEY", &env.user.key)
+                .header(
+                    axum::http::header::CONTENT_TYPE,
+                    mime::APPLICATION_JSON.as_ref(),
+                )
+                .body(Body::from(serde_json::to_vec(&new_subject).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(res.status(), StatusCode::BAD_REQUEST);
+
+    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
+    let e: Error = serde_json::from_slice(&body).unwrap();
+
+    assert_eq!(e.response, "ERROR".to_string());
+
+    let res = env
+        .app
+        .call(
+            Request::builder()
+                .method("GET")
+                .header("X-API-KEY", &env.user.key)
+                .uri("/login")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(res.status(), StatusCode::OK);
+
+    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
+    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+
+    assert_eq!(lr.response, "OK".to_string());
+    assert_eq!(lr.user, env.user.clone());
+    assert!(lr.subjects.is_empty());
+    assert!(lr.groups.is_empty());
+
+    env.cleanup().await;
+}

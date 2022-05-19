@@ -4,6 +4,7 @@
 //!
 //! See endpoint documentation at <https://docs.berserksystems.com/endpoints/create/>.
 
+use crate::config::IConfig;
 use crate::database::{self, DBHandle};
 use crate::group::*;
 use crate::key::Key;
@@ -34,11 +35,26 @@ pub enum CreateData {
     },
 }
 
-pub async fn create(Json(data): Json<CreateData>, db: DBHandle, key: Key) -> impl IntoResponse {
+pub async fn create(
+    Json(data): Json<CreateData>,
+    db: DBHandle,
+    key: Key,
+    config: IConfig,
+) -> impl IntoResponse {
     match data {
         CreateData::CreateSubject { .. } => {
             let subj_coll: Collection<Subject> = db.collection("subjects");
             if let Some(subject) = subject_from_create(data, &db, key).await {
+                for platform in subject.profiles.keys() {
+                    if config.content_types.get(platform).is_none()
+                        && config.presence_types.get(platform).is_none()
+                    {
+                        return Err((
+                            StatusCode::BAD_REQUEST,
+                            Json(Error::new("Profiles contains unsupported platform(s).")),
+                        ));
+                    }
+                }
                 if subj_coll.insert_one(&subject, None).await.is_ok() {
                     for platform in subject.profiles.keys() {
                         for id in subject.profiles.get(platform).unwrap() {
