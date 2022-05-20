@@ -130,6 +130,16 @@ async fn update_group(
         .find_one(doc! {"uuid": &uuid, "created_by": &req_uuid}, None)
         .await
     {
+        let subj_coll: Collection<Subject> = db.collection("subjects");
+        for s in subjects {
+            let subject = subj_coll.find_one(doc! {"uuid": s}, None).await.unwrap();
+            if subject.is_none() {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    Json(Error::new("One or more of the subjects does not exist.")),
+                ));
+            }
+        }
         group_coll
             .update_one(
                 doc! {"uuid": &uuid, "created_by": &req_uuid},

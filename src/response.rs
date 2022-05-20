@@ -158,3 +158,18 @@ impl LoginResponse {
         }
     }
 }
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct CreateResponse {
+    pub response: String,
+    pub uuid: String,
+}
+
+impl CreateResponse {
+    pub fn new(uuid: &str) -> Self {
+        Self {
+            response: "OK".to_string(),
+            uuid: uuid.to_string(),
+        }
+    }
+}

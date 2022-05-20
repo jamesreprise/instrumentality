@@ -8,7 +8,7 @@ use crate::config::IConfig;
 use crate::database::{self, DBHandle};
 use crate::group::*;
 use crate::key::Key;
-use crate::response::{Error, Ok};
+use crate::response::{CreateResponse, Error};
 use crate::routes::queue;
 use crate::subject::*;
 
@@ -61,7 +61,7 @@ pub async fn create(
                             queue::add_queue_item(id, platform, &db, false).await;
                         }
                     }
-                    Ok((StatusCode::OK, Json(Ok::new())))
+                    Ok((StatusCode::OK, Json(CreateResponse::new(&subject.uuid))))
                 } else {
                     Err((
                         StatusCode::CONFLICT,
@@ -78,18 +78,18 @@ pub async fn create(
         CreateData::CreateGroup { .. } => {
             let group_coll: Collection<Group> = db.collection("groups");
             if let Some(group) = group_from_create(data, &db, key).await {
+                let subj_coll: Collection<Subject> = db.collection("subjects");
                 for s in &group.subjects {
-                    let subj_coll: Collection<Subject> = db.collection("subjects");
                     let subject = subj_coll.find_one(doc! {"uuid": s}, None).await.unwrap();
                     if subject.is_none() {
                         return Err((
-                            StatusCode::CONFLICT,
+                            StatusCode::BAD_REQUEST,
                             Json(Error::new("One or more of the subjects does not exist.")),
                         ));
                     }
                 }
                 if group_coll.insert_one(&group, None).await.is_ok() {
-                    Ok((StatusCode::OK, Json(Ok::new())))
+                    Ok((StatusCode::OK, Json(CreateResponse::new(&group.uuid))))
                 } else {
                     Err((
                         StatusCode::CONFLICT,

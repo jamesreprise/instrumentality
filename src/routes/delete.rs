@@ -61,7 +61,7 @@ pub async fn delete(Json(data): Json<DeleteData>, db: DBHandle, key: Key) -> imp
             ))
         }
     } else {
-        let group_coll: Collection<Subject> = db.collection("groups");
+        let group_coll: Collection<Group> = db.collection("groups");
         if let Ok(Some(_)) = group_coll
             .find_one(doc! {"uuid": &data.uuid, "created_by": &req_uuid}, None)
             .await

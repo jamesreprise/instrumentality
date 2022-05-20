@@ -19,11 +19,11 @@ use crate::routes::types::*;
 use crate::routes::update::*;
 use crate::routes::view::*;
 
-use axum::extract::ContentLengthLimit;
+// use axum::extract::ContentLengthLimit;
 use axum::http::header::{self, HeaderValue};
 use axum::http::StatusCode;
 use axum::middleware;
-use axum::middleware::from_extractor;
+// use axum::middleware::from_extractor;
 use axum::{
     error_handling::HandleErrorLayer,
     extract::Extension,
@@ -63,9 +63,6 @@ pub fn build_tracing() {
 
 fn build_app(config: IConfig, db_pool: DBPool) -> Router {
     let service_builder = ServiceBuilder::new()
-        // .layer(from_extractor::<ContentLengthLimit<(), 10_000_000>>())
-        // Need a content length limit, but this breaks integration tests.
-        // <()... doesn't remove headers but breaks POSTs and vice versa.
         .layer(middleware::from_fn(error_transformer))
         .layer(HandleErrorLayer::new(|error: BoxError| async move {
             if error.is::<tower::timeout::error::Elapsed>() {
@@ -83,6 +80,9 @@ fn build_app(config: IConfig, db_pool: DBPool) -> Router {
             header::SERVER,
             HeaderValue::from_static("instrumentality"),
         ))
+        // .layer(from_extractor::<ContentLengthLimit<(), 10_000_000>>())
+        // Need a content length limit, but this breaks integration tests.
+        // <()... doesn't remove headers but breaks POSTs and vice versa.
         .timeout(Duration::from_secs(5));
 
     Router::new()

@@ -96,9 +96,10 @@ async fn create_indexes(database: &Database) {
     users_key_index(database).await.unwrap();
     users_user_index(database).await.unwrap();
     users_key_banned_index(database).await.unwrap();
-    queue_platform_and_id_index(database).await.unwrap();
     subjects_uuid_index(database).await.unwrap();
     referrals_code_used_index(database).await.unwrap();
+    groups_uuid_index(database).await.unwrap();
+    queue_platform_and_id_index(database).await.unwrap();
     queue_id_index(database).await.unwrap();
     data_id_platform_index(database).await.unwrap();
 }
@@ -224,6 +225,24 @@ async fn subjects_uuid_index(
 
     database
         .collection::<Data>("subjects")
+        .create_index(idx_model, None)
+        .await
+}
+
+async fn groups_uuid_index(
+    database: &Database,
+) -> Result<CreateIndexResult, mongodb::error::Error> {
+    let idx_options = IndexOptions::builder()
+        .name(String::from("Groups UUID Index"))
+        .build();
+
+    let idx_model = IndexModel::builder()
+        .keys(doc! {"uuid" : 1_u32})
+        .options(idx_options)
+        .build();
+
+    database
+        .collection::<Data>("groups")
         .create_index(idx_model, None)
         .await
 }
