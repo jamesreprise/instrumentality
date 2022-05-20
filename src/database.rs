@@ -93,6 +93,14 @@ async fn create_root_account(database: &Database) -> Result<User, Box<dyn std::e
 async fn create_indexes(database: &Database) {
     unique_content_index(database).await.unwrap();
     unique_subject_name_index(database).await.unwrap();
+    users_key_index(database).await.unwrap();
+    users_user_index(database).await.unwrap();
+    users_key_banned_index(database).await.unwrap();
+    queue_platform_and_id_index(database).await.unwrap();
+    subjects_uuid_index(database).await.unwrap();
+    referrals_code_used_index(database).await.unwrap();
+    queue_id_index(database).await.unwrap();
+    data_id_platform_index(database).await.unwrap();
 }
 
 async fn unique_subject_name_index(
@@ -125,6 +133,144 @@ async fn unique_content_index(
 
     let idx_model = IndexModel::builder()
         .keys(doc! {"content_id" : 1_u32, "platform": 1_u32, "content_type" : 1_u32})
+        .options(idx_options)
+        .build();
+
+    database
+        .collection::<Data>("data")
+        .create_index(idx_model, None)
+        .await
+}
+
+async fn users_key_index(database: &Database) -> Result<CreateIndexResult, mongodb::error::Error> {
+    let idx_options = IndexOptions::builder()
+        .name(String::from("Users Key Index"))
+        .build();
+
+    let idx_model = IndexModel::builder()
+        .keys(doc! {"key" : 1_u32})
+        .options(idx_options)
+        .build();
+
+    database
+        .collection::<Data>("users")
+        .create_index(idx_model, None)
+        .await
+}
+
+async fn users_key_banned_index(
+    database: &Database,
+) -> Result<CreateIndexResult, mongodb::error::Error> {
+    let idx_options = IndexOptions::builder()
+        .name(String::from("Users Key & Banned Index"))
+        .build();
+
+    let idx_model = IndexModel::builder()
+        .keys(doc! {"key" : 1_u32, "banned" : 1_u32})
+        .options(idx_options)
+        .build();
+
+    database
+        .collection::<Data>("users")
+        .create_index(idx_model, None)
+        .await
+}
+
+async fn users_user_index(database: &Database) -> Result<CreateIndexResult, mongodb::error::Error> {
+    let idx_options = IndexOptions::builder()
+        .name(String::from("Users User Index"))
+        .build();
+
+    let idx_model = IndexModel::builder()
+        .keys(doc! {"user" : 1_u32})
+        .options(idx_options)
+        .build();
+
+    database
+        .collection::<Data>("users")
+        .create_index(idx_model, None)
+        .await
+}
+
+async fn queue_platform_and_id_index(
+    database: &Database,
+) -> Result<CreateIndexResult, mongodb::error::Error> {
+    let idx_options = IndexOptions::builder()
+        .name(String::from("Queue Platform and Platform ID Index"))
+        .build();
+
+    let idx_model = IndexModel::builder()
+        .keys(doc! {"platform" : 1_u32, "platform_id" : 1_u32})
+        .options(idx_options)
+        .build();
+
+    database
+        .collection::<Data>("queue")
+        .create_index(idx_model, None)
+        .await
+}
+
+async fn subjects_uuid_index(
+    database: &Database,
+) -> Result<CreateIndexResult, mongodb::error::Error> {
+    let idx_options = IndexOptions::builder()
+        .name(String::from("Subjects UUID Index"))
+        .build();
+
+    let idx_model = IndexModel::builder()
+        .keys(doc! {"uuid" : 1_u32})
+        .options(idx_options)
+        .build();
+
+    database
+        .collection::<Data>("subjects")
+        .create_index(idx_model, None)
+        .await
+}
+
+async fn referrals_code_used_index(
+    database: &Database,
+) -> Result<CreateIndexResult, mongodb::error::Error> {
+    let idx_options = IndexOptions::builder()
+        .name(String::from("Referrals Code Used Index"))
+        .build();
+
+    let idx_model = IndexModel::builder()
+        .keys(doc! {"code" : 1_u32, "used" : 1_u32})
+        .options(idx_options)
+        .build();
+
+    database
+        .collection::<Data>("referrals")
+        .create_index(idx_model, None)
+        .await
+}
+
+async fn queue_id_index(database: &Database) -> Result<CreateIndexResult, mongodb::error::Error> {
+    let idx_options = IndexOptions::builder()
+        .name(String::from("Queue ID Index"))
+        .build();
+
+    let idx_model = IndexModel::builder()
+        .keys(doc! {"queue_id" : 1_u32})
+        .options(idx_options)
+        .build();
+
+    database
+        .collection::<Data>("queue")
+        .create_index(idx_model, None)
+        .await
+}
+
+async fn data_id_platform_index(
+    database: &Database,
+) -> Result<CreateIndexResult, mongodb::error::Error> {
+    let idx_options = IndexOptions::builder()
+        .name(String::from("Data Platform ID & Platform Index"))
+        .build();
+
+    let idx_model = IndexModel::builder()
+        .keys(doc! {"id" : 1_u32, "platform" : 1_u32})
         .options(idx_options)
         .build();
 
