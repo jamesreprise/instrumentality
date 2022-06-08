@@ -13,10 +13,13 @@
 use instrumentality::config;
 use instrumentality::config::IConfig;
 use instrumentality::database;
+use instrumentality::response::LoginResponse;
 use instrumentality::server;
 use instrumentality::user::User;
 
 use axum::Router;
+use hyper::{Body, Request, StatusCode};
+use tower::Service;
 use uuid::Uuid;
 
 pub const TEST_ENVIRONMENT_CONFIG: &str = "InstrumentalityTest.toml";
@@ -42,6 +45,30 @@ impl Environment {
     pub async fn cleanup(self) {
         let database = database::open(&self.config).await.unwrap();
         database::drop_database(&database.handle()).await;
+    }
+
+    // This is only used in tests, so it flags as dead code.
+    #[allow(dead_code)]
+    pub async fn login(&mut self) -> LoginResponse {
+        let res = self
+            .app
+            .call(
+                Request::builder()
+                    .method("GET")
+                    .header("X-API-KEY", &self.user.key)
+                    .uri("/login")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(res.status(), StatusCode::OK);
+
+        let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
+        let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+
+        lr
     }
 
     // Provides a client to process requests to Instrumentality without going over

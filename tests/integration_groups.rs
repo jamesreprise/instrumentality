@@ -55,23 +55,7 @@ async fn test_group_creation() {
 
     assert_eq!(cr.response, "OK".to_string());
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
@@ -110,23 +94,7 @@ async fn test_group_creation() {
 
     assert_eq!(res.status(), StatusCode::OK);
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
@@ -183,23 +151,7 @@ async fn test_group_bad_key_creation() {
 
     assert_eq!(cr.response, "OK".to_string());
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
@@ -238,23 +190,7 @@ async fn test_group_bad_key_creation() {
 
     assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
@@ -315,23 +251,7 @@ async fn test_group_deletion() {
 
     assert_eq!(cr.response, "OK".to_string());
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
@@ -370,23 +290,7 @@ async fn test_group_deletion() {
 
     assert_eq!(res.status(), StatusCode::OK);
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     let group_uuid = lr.groups[0].uuid.clone();
     println!("{}", group_uuid);
@@ -423,23 +327,7 @@ async fn test_group_deletion() {
 
     assert_eq!(res.status(), StatusCode::OK);
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
@@ -500,23 +388,7 @@ async fn test_group_subject_deletion() {
 
     assert_eq!(cr.response, "OK".to_string());
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
@@ -555,23 +427,7 @@ async fn test_group_subject_deletion() {
 
     assert_eq!(res.status(), StatusCode::OK);
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     let group_uuid = lr.groups[0].uuid.clone();
     println!("{}", group_uuid);
@@ -608,23 +464,7 @@ async fn test_group_subject_deletion() {
 
     assert_eq!(res.status(), StatusCode::OK);
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
@@ -682,23 +522,7 @@ async fn test_group_update() {
 
     assert_eq!(cr.response, "OK".to_string());
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
@@ -737,23 +561,7 @@ async fn test_group_update() {
 
     assert_eq!(res.status(), StatusCode::OK);
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
@@ -795,23 +603,7 @@ async fn test_group_update() {
 
     assert_eq!(res.status(), StatusCode::OK);
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
@@ -850,23 +642,7 @@ async fn test_group_update() {
 
     assert_eq!(res.status(), StatusCode::OK);
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
@@ -922,23 +698,7 @@ async fn test_group_bad_uuid_creation() {
 
     assert_eq!(cr.response, "OK".to_string());
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
@@ -977,23 +737,7 @@ async fn test_group_bad_uuid_creation() {
 
     assert_eq!(res.status(), StatusCode::BAD_REQUEST);
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
@@ -1054,23 +798,7 @@ async fn test_group_bad_uuid_update() {
 
     assert_eq!(cr.response, "OK".to_string());
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
@@ -1109,23 +837,7 @@ async fn test_group_bad_uuid_update() {
 
     assert_eq!(res.status(), StatusCode::OK);
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
@@ -1167,23 +879,7 @@ async fn test_group_bad_uuid_update() {
 
     assert_eq!(res.status(), StatusCode::OK);
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
@@ -1222,23 +918,7 @@ async fn test_group_bad_uuid_update() {
 
     assert_eq!(res.status(), StatusCode::BAD_REQUEST);
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());

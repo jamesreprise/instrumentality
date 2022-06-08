@@ -83,23 +83,7 @@ async fn test_authorised_login() {
 
     let mut env: Environment = Environment::new(TEST_ENVIRONMENT_CONFIG).await;
 
-    let res = env
-        .app
-        .call(
-            Request::builder()
-                .method("GET")
-                .header("X-API-KEY", &env.user.key)
-                .uri("/login")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(res.status(), StatusCode::OK);
-
-    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-    let lr: LoginResponse = serde_json::from_slice(&body).unwrap();
+    let lr: LoginResponse = env.login().await;
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
