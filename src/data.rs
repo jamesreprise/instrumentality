@@ -390,22 +390,22 @@ impl Datas {
                 for d in &self.data {
                     let verified: bool = match &d {
                         Data::Meta { platform, id, .. } => {
-                            if let Some(platform_id) = platform_id.clone() {
-                                &platform_id == id && &q_item.platform == platform
+                            if platform_id.is_some() {
+                                platform_id.as_ref() == Some(id) && &q_item.platform == platform
                             } else {
                                 &q_item.platform == platform
                             }
                         }
                         Data::Content { platform, id, .. } => {
-                            if let Some(platform_id) = platform_id.clone() {
-                                &platform_id == id && &q_item.platform == platform
+                            if platform_id.is_some() {
+                                platform_id.as_ref() == Some(id) && &q_item.platform == platform
                             } else {
                                 &q_item.platform == platform
                             }
                         }
                         Data::Presence { platform, id, .. } => {
-                            if let Some(platform_id) = platform_id.clone() {
-                                &platform_id == id && &q_item.platform == platform
+                            if platform_id.is_some() {
+                                platform_id.as_ref() == Some(id) && &q_item.platform == platform
                             } else {
                                 &q_item.platform == platform
                             }

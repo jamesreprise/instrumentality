@@ -4,7 +4,7 @@
 //!
 //! See endpoint documentation at <https://docs.berserksystems.com/endpoints/view/>.
 
-use crate::data::*;
+use crate::data::Data;
 use crate::database::DBHandle;
 use crate::key::Key;
 use crate::response::{Error, ViewResponse};
@@ -40,9 +40,9 @@ struct SubjectData {
 }
 
 impl SubjectData {
-    fn new(subject: &Subject) -> Self {
+    fn new(subject: Subject) -> Self {
         Self {
-            subject: subject.clone(),
+            subject,
             platforms: Vec::new(),
         }
     }
@@ -132,7 +132,7 @@ pub async fn view(
     let mut view_data = ViewData::new();
 
     for s in subjects {
-        let mut subject_data: SubjectData = SubjectData::new(&s);
+        let mut subject_data: SubjectData = SubjectData::new(s.clone());
         for platform_name in s.profiles.keys() {
             let mut platform_data = PlatformData::new(platform_name.to_string());
             for platform_id in s.profiles.get(platform_name).unwrap() {

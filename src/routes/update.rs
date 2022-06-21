@@ -4,19 +4,19 @@
 //!
 //! See endpoint documentation at <https://docs.berserksystems.com/endpoints/register/>.
 
-use crate::database::{self, DBHandle};
+use crate::database::DBHandle;
 use crate::group::Group;
 use crate::key::Key;
 use crate::response::{Error, Ok};
 use crate::routes::queue;
 use crate::subject::*;
+use crate::user::User;
 
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use mongodb::bson::doc;
 use mongodb::{bson, Collection};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-// use tokio_stream::StreamExt;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
@@ -56,7 +56,7 @@ async fn update_subject(
         } => (uuid, name, profiles, description),
         _ => panic!("Expected UpdateSubject."),
     };
-    let req_uuid = database::user_with_key(&key.key, db).await.unwrap().uuid;
+    let req_uuid = User::with_key(&key.key, db).await.unwrap().uuid;
     let subj_coll: Collection<Subject> = db.collection("subjects");
     if let Ok(Some(subject)) = subj_coll
         .find_one(doc! {"uuid": &uuid, "created_by": &req_uuid}, None)
@@ -124,7 +124,7 @@ async fn update_group(
         } => (uuid, name, subjects, description),
         _ => panic!("Expected UpdateGroup."),
     };
-    let req_uuid = database::user_with_key(&key.key, db).await.unwrap().uuid;
+    let req_uuid = User::with_key(&key.key, db).await.unwrap().uuid;
     let group_coll: Collection<Group> = db.collection("groups");
     if let Ok(Some(_)) = group_coll
         .find_one(doc! {"uuid": &uuid, "created_by": &req_uuid}, None)

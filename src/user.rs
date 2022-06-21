@@ -1,7 +1,13 @@
 //! Basic user concepts for Instrumentality.
 
+use crate::database::DBHandle;
+use crate::group::Group;
+use crate::subject::Subject;
+
+use mongodb::{bson::doc, Collection, Cursor};
 use serde::{Deserialize, Serialize};
 use std::fmt::Write;
+use tokio_stream::StreamExt;
 use uuid::Uuid;
 
 #[derive(Eq, PartialEq, Clone, Debug, Deserialize, Serialize)]
@@ -30,6 +36,44 @@ impl User {
             write!(&mut key, "{:0>2X}", b).unwrap();
         }
         key
+    }
+
+    pub async fn subjects(&self, db: &DBHandle) -> Option<Vec<Subject>> {
+        let subj_coll: Collection<Subject> = db.collection("subjects");
+        let cursor: Cursor<Subject> = subj_coll
+            .find(doc! {"created_by": &self.uuid}, None)
+            .await
+            .unwrap();
+
+        let results: Vec<Result<Subject, mongodb::error::Error>> = cursor.collect().await;
+        let subjects: Vec<Subject> = results.into_iter().map(|d| d.unwrap()).collect();
+        if subjects.is_empty() {
+            None
+        } else {
+            Some(subjects)
+        }
+    }
+
+    pub async fn groups(&self, db: &DBHandle) -> Option<Vec<Group>> {
+        let group_coll: Collection<Group> = db.collection("groups");
+        let cursor: Cursor<Group> = group_coll
+            .find(doc! {"created_by": &self.uuid}, None)
+            .await
+            .unwrap();
+
+        let results: Vec<Result<Group, mongodb::error::Error>> = cursor.collect().await;
+        let groups: Vec<Group> = results.into_iter().map(|d| d.unwrap()).collect();
+        if groups.is_empty() {
+            None
+        } else {
+            Some(groups)
+        }
+    }
+
+    pub async fn with_key(key: &str, db: &DBHandle) -> Option<Self> {
+        let users_coll: Collection<User> = db.collection("users");
+        let result = users_coll.find_one(doc! {"key": key}, None).await.unwrap();
+        result
     }
 }
 

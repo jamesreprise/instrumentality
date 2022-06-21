@@ -2,19 +2,17 @@
 
 use crate::config::IConfig;
 use crate::data::Data;
-use crate::group::Group;
 use crate::subject::Subject;
 use crate::user::User;
 
 use axum::async_trait;
 use axum::extract::{FromRequest, RequestParts};
 use axum::response::Response;
+use mongodb::bson::Document;
 use mongodb::options::{ClientOptions, IndexOptions};
 use mongodb::results::CreateIndexResult;
-use mongodb::Cursor;
 use mongodb::{bson::doc, Client, Collection, Database, IndexModel};
 use std::time::Duration;
-use tokio_stream::StreamExt;
 
 #[derive(Clone)]
 pub struct DBPool {
@@ -93,15 +91,73 @@ async fn create_root_account(database: &Database) -> Result<User, Box<dyn std::e
 async fn create_indexes(database: &Database) {
     unique_content_index(database).await.unwrap();
     unique_subject_name_index(database).await.unwrap();
-    users_key_index(database).await.unwrap();
-    users_user_index(database).await.unwrap();
-    users_key_banned_index(database).await.unwrap();
-    subjects_uuid_index(database).await.unwrap();
-    referrals_code_used_index(database).await.unwrap();
-    groups_uuid_index(database).await.unwrap();
-    queue_platform_and_id_index(database).await.unwrap();
-    queue_id_index(database).await.unwrap();
-    data_id_platform_index(database).await.unwrap();
+    create_index("Users Key Index", "users", doc! {"key" : 1_u32}, database)
+        .await
+        .unwrap();
+    create_index(
+        "Users Key & Banned Index",
+        "users",
+        doc! {"key" : 1_u32, "banned" : 1_u32},
+        database,
+    )
+    .await
+    .unwrap();
+    create_index(
+        "Queue Platform & Platform ID",
+        "queue",
+        doc! {"platform" : 1_u32, "platform_id" : 1_u32},
+        database,
+    )
+    .await
+    .unwrap();
+    create_index(
+        "Queue ID Index",
+        "queue",
+        doc! {"queue_id" : 1_u32},
+        database,
+    )
+    .await
+    .unwrap();
+    create_index(
+        "Subjects UUID Index",
+        "subjects",
+        doc! {"uuid" : 1_u32},
+        database,
+    )
+    .await
+    .unwrap();
+    create_index(
+        "Groups UUID Index",
+        "groups",
+        doc! {"uuid" : 1_u32},
+        database,
+    )
+    .await
+    .unwrap();
+    create_index(
+        "Referrals Code Used Index",
+        "referrals",
+        doc! {"code" : 1_u32, "used" : 1_u32},
+        database,
+    )
+    .await
+    .unwrap();
+    create_index(
+        "Data Platform ID & Platform Index",
+        "data",
+        doc! {"id" : 1_u32, "platform" : 1_u32},
+        database,
+    )
+    .await
+    .unwrap();
+    create_index(
+        "Queue Platform & Platform ID",
+        "queue",
+        doc! {"platform" : 1_u32, "platform_id" : 1_u32},
+        database,
+    )
+    .await
+    .unwrap();
 }
 
 async fn unique_subject_name_index(
@@ -143,158 +199,21 @@ async fn unique_content_index(
         .await
 }
 
-async fn users_key_index(database: &Database) -> Result<CreateIndexResult, mongodb::error::Error> {
-    let idx_options = IndexOptions::builder()
-        .name(String::from("Users Key Index"))
-        .build();
-
-    let idx_model = IndexModel::builder()
-        .keys(doc! {"key" : 1_u32})
-        .options(idx_options)
-        .build();
-
-    database
-        .collection::<Data>("users")
-        .create_index(idx_model, None)
-        .await
-}
-
-async fn users_key_banned_index(
+async fn create_index(
+    index_name: &str,
+    collection_name: &str,
+    keys: Document,
     database: &Database,
 ) -> Result<CreateIndexResult, mongodb::error::Error> {
-    let idx_options = IndexOptions::builder()
-        .name(String::from("Users Key & Banned Index"))
-        .build();
+    let idx_options = IndexOptions::builder().name(index_name.to_string()).build();
 
     let idx_model = IndexModel::builder()
-        .keys(doc! {"key" : 1_u32, "banned" : 1_u32})
+        .keys(keys)
         .options(idx_options)
         .build();
 
     database
-        .collection::<Data>("users")
-        .create_index(idx_model, None)
-        .await
-}
-
-async fn users_user_index(database: &Database) -> Result<CreateIndexResult, mongodb::error::Error> {
-    let idx_options = IndexOptions::builder()
-        .name(String::from("Users User Index"))
-        .build();
-
-    let idx_model = IndexModel::builder()
-        .keys(doc! {"user" : 1_u32})
-        .options(idx_options)
-        .build();
-
-    database
-        .collection::<Data>("users")
-        .create_index(idx_model, None)
-        .await
-}
-
-async fn queue_platform_and_id_index(
-    database: &Database,
-) -> Result<CreateIndexResult, mongodb::error::Error> {
-    let idx_options = IndexOptions::builder()
-        .name(String::from("Queue Platform and Platform ID Index"))
-        .build();
-
-    let idx_model = IndexModel::builder()
-        .keys(doc! {"platform" : 1_u32, "platform_id" : 1_u32})
-        .options(idx_options)
-        .build();
-
-    database
-        .collection::<Data>("queue")
-        .create_index(idx_model, None)
-        .await
-}
-
-async fn subjects_uuid_index(
-    database: &Database,
-) -> Result<CreateIndexResult, mongodb::error::Error> {
-    let idx_options = IndexOptions::builder()
-        .name(String::from("Subjects UUID Index"))
-        .build();
-
-    let idx_model = IndexModel::builder()
-        .keys(doc! {"uuid" : 1_u32})
-        .options(idx_options)
-        .build();
-
-    database
-        .collection::<Data>("subjects")
-        .create_index(idx_model, None)
-        .await
-}
-
-async fn groups_uuid_index(
-    database: &Database,
-) -> Result<CreateIndexResult, mongodb::error::Error> {
-    let idx_options = IndexOptions::builder()
-        .name(String::from("Groups UUID Index"))
-        .build();
-
-    let idx_model = IndexModel::builder()
-        .keys(doc! {"uuid" : 1_u32})
-        .options(idx_options)
-        .build();
-
-    database
-        .collection::<Data>("groups")
-        .create_index(idx_model, None)
-        .await
-}
-
-async fn referrals_code_used_index(
-    database: &Database,
-) -> Result<CreateIndexResult, mongodb::error::Error> {
-    let idx_options = IndexOptions::builder()
-        .name(String::from("Referrals Code Used Index"))
-        .build();
-
-    let idx_model = IndexModel::builder()
-        .keys(doc! {"code" : 1_u32, "used" : 1_u32})
-        .options(idx_options)
-        .build();
-
-    database
-        .collection::<Data>("referrals")
-        .create_index(idx_model, None)
-        .await
-}
-
-async fn queue_id_index(database: &Database) -> Result<CreateIndexResult, mongodb::error::Error> {
-    let idx_options = IndexOptions::builder()
-        .name(String::from("Queue ID Index"))
-        .build();
-
-    let idx_model = IndexModel::builder()
-        .keys(doc! {"queue_id" : 1_u32})
-        .options(idx_options)
-        .build();
-
-    database
-        .collection::<Data>("queue")
-        .create_index(idx_model, None)
-        .await
-}
-
-async fn data_id_platform_index(
-    database: &Database,
-) -> Result<CreateIndexResult, mongodb::error::Error> {
-    let idx_options = IndexOptions::builder()
-        .name(String::from("Data Platform ID & Platform Index"))
-        .build();
-
-    let idx_model = IndexModel::builder()
-        .keys(doc! {"id" : 1_u32, "platform" : 1_u32})
-        .options(idx_options)
-        .build();
-
-    database
-        .collection::<Data>("data")
+        .collection::<Data>(collection_name)
         .create_index(idx_model, None)
         .await
 }
@@ -313,43 +232,5 @@ impl<B: Send> FromRequest<B> for DBHandle {
         let db = db_pool.handle();
 
         Ok(db)
-    }
-}
-
-pub async fn user_with_key(key: &str, db: &DBHandle) -> Option<User> {
-    let users_coll: Collection<User> = db.collection("users");
-    let result = users_coll.find_one(doc! {"key": key}, None).await.unwrap();
-    result
-}
-
-pub async fn user_subjects(user: &User, db: &DBHandle) -> Option<Vec<Subject>> {
-    let subj_coll: Collection<Subject> = db.collection("subjects");
-    let cursor: Cursor<Subject> = subj_coll
-        .find(doc! {"created_by": &user.uuid}, None)
-        .await
-        .unwrap();
-
-    let results: Vec<Result<Subject, mongodb::error::Error>> = cursor.collect().await;
-    let subjects: Vec<Subject> = results.into_iter().map(|d| d.unwrap()).collect();
-    if subjects.is_empty() {
-        None
-    } else {
-        Some(subjects)
-    }
-}
-
-pub async fn user_groups(user: &User, db: &DBHandle) -> Option<Vec<Group>> {
-    let group_coll: Collection<Group> = db.collection("groups");
-    let cursor: Cursor<Group> = group_coll
-        .find(doc! {"created_by": &user.uuid}, None)
-        .await
-        .unwrap();
-
-    let results: Vec<Result<Group, mongodb::error::Error>> = cursor.collect().await;
-    let groups: Vec<Group> = results.into_iter().map(|d| d.unwrap()).collect();
-    if groups.is_empty() {
-        None
-    } else {
-        Some(groups)
     }
 }

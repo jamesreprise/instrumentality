@@ -5,12 +5,13 @@
 //! See endpoint documentation at <https://docs.berserksystems.com/endpoints/create/>.
 
 use crate::config::IConfig;
-use crate::database::{self, DBHandle};
-use crate::group::*;
+use crate::database::DBHandle;
+use crate::group::Group;
 use crate::key::Key;
 use crate::response::{CreateResponse, Error};
 use crate::routes::queue;
 use crate::subject::*;
+use crate::user::User;
 
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use chrono::Utc;
@@ -115,7 +116,7 @@ pub async fn group_from_create(cs: CreateData, db: &DBHandle, key: Key) -> Optio
         } => Some(Group {
             uuid: Uuid::new_v4().to_string(),
             created_at: Utc::now(),
-            created_by: database::user_with_key(&key.key, db).await.unwrap().uuid,
+            created_by: User::with_key(&key.key, db).await.unwrap().uuid,
             name,
             subjects,
             description,
@@ -133,7 +134,7 @@ pub async fn subject_from_create(cs: CreateData, db: &DBHandle, key: Key) -> Opt
         } => Some(Subject {
             uuid: Uuid::new_v4().to_string(),
             created_at: Utc::now(),
-            created_by: database::user_with_key(&key.key, db).await.unwrap().uuid,
+            created_by: User::with_key(&key.key, db).await.unwrap().uuid,
             name,
             profiles,
             description,
