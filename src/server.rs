@@ -38,7 +38,9 @@ use tower_http::set_header::SetResponseHeaderLayer;
 use tower_http::BoxError;
 use tracing_subscriber::{prelude::*, EnvFilter};
 
-pub async fn build_server(config: &IConfig) -> (Router, RustlsConfig, SocketAddr) {
+pub async fn build_server(
+    config: &IConfig,
+) -> (Router, RustlsConfig, SocketAddr) {
     let db_pool = database::open(config).await.unwrap();
     tracing::info!("Connected to MongoDB.");
 

@@ -22,12 +22,16 @@ async fn main() {
 
         let (app, tls_config, addr) = server::build_server(&config).await;
 
-        let server = axum_server::bind_rustls(addr, tls_config).serve(app.into_make_service());
+        let server = axum_server::bind_rustls(addr, tls_config)
+            .serve(app.into_make_service());
 
         tracing::info!("READY: https://{:?}.", addr);
         server.await.unwrap();
     } else {
-        tracing::info!("Couldn't load \"Instrumentality.toml\", creating an example at InstrumentalityExample.toml.");
+        tracing::info!(
+            "Couldn't load \"Instrumentality.toml\", 
+            creating an example at InstrumentalityExample.toml."
+        );
         let mut file = File::create("InstrumentalityExample.toml").unwrap();
         file.write_all(EXAMPLE_CONFIG_FILE).unwrap();
     }

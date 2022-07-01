@@ -19,7 +19,7 @@
 //     use instrumentality::data::Data;
 //     use instrumentality::response::Ok;
 
-//     let mut env: Environment = Environment::new(TEST_ENVIRONMENT_CONFIG).await;
+//     let mut env = Environment::new(TEST_ENVIRONMENT_CONFIG).await;
 
 //     let data = Data::Content {};
 

@@ -45,8 +45,10 @@ impl User {
             .await
             .unwrap();
 
-        let results: Vec<Result<Subject, mongodb::error::Error>> = cursor.collect().await;
-        let subjects: Vec<Subject> = results.into_iter().map(|d| d.unwrap()).collect();
+        let results: Vec<Result<Subject, mongodb::error::Error>> =
+            cursor.collect().await;
+        let subjects: Vec<Subject> =
+            results.into_iter().map(|d| d.unwrap()).collect();
         if subjects.is_empty() {
             None
         } else {
@@ -61,8 +63,10 @@ impl User {
             .await
             .unwrap();
 
-        let results: Vec<Result<Group, mongodb::error::Error>> = cursor.collect().await;
-        let groups: Vec<Group> = results.into_iter().map(|d| d.unwrap()).collect();
+        let results: Vec<Result<Group, mongodb::error::Error>> =
+            cursor.collect().await;
+        let groups: Vec<Group> =
+            results.into_iter().map(|d| d.unwrap()).collect();
         if groups.is_empty() {
             None
         } else {
@@ -72,7 +76,8 @@ impl User {
 
     pub async fn with_key(key: &str, db: &DBHandle) -> Option<Self> {
         let users_coll: Collection<User> = db.collection("users");
-        let result = users_coll.find_one(doc! {"key": key}, None).await.unwrap();
+        let result =
+            users_coll.find_one(doc! {"key": key}, None).await.unwrap();
         result
     }
 }

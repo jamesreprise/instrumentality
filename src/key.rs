@@ -30,7 +30,9 @@ async fn user_exists_and_not_banned(db: &DBHandle, key: &str) -> bool {
 impl<B: Send> FromRequest<B> for Key {
     type Rejection = Response;
 
-    async fn from_request(request: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
+    async fn from_request(
+        request: &mut RequestParts<B>,
+    ) -> Result<Self, Self::Rejection> {
         let db = request.extensions().get::<DBPool>().unwrap();
 
         // This will still perform a lookup for key 'invalid'.
@@ -38,21 +40,25 @@ impl<B: Send> FromRequest<B> for Key {
         match key {
             Some(key) => {
                 let key = key.to_str().unwrap();
-                let result = user_exists_and_not_banned(&db.handle(), key).await;
+                let result =
+                    user_exists_and_not_banned(&db.handle(), key).await;
 
                 match result {
                     true => Ok(Key {
                         key: key.to_string(),
                     }),
-                    false => Err(
-                        (StatusCode::UNAUTHORIZED, Json(Error::new("Unauthorized.")))
-                            .into_response(),
-                    ),
+                    false => Err((
+                        StatusCode::UNAUTHORIZED,
+                        Json(Error::new("Unauthorized.")),
+                    )
+                        .into_response()),
                 }
             }
-            None => {
-                Err((StatusCode::UNAUTHORIZED, Json(Error::new("Unauthorized."))).into_response())
-            }
+            None => Err((
+                StatusCode::UNAUTHORIZED,
+                Json(Error::new("Unauthorized.")),
+            )
+                .into_response()),
         }
     }
 }

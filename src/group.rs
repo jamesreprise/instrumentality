@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 pub struct Group {
     pub uuid: String,
     pub created_at: DateTime<Utc>,
-    pub created_by: String, // Created by a user.
+    pub created_by: String, // UUID
     pub name: String,
     pub subjects: Vec<String>,
     pub description: Option<String>,

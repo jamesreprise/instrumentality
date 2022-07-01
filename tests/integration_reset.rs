@@ -14,7 +14,8 @@ use tower::Service;
 /// - Authentication of the test user works as expected.
 /// - Reset route returns the correct information:
 ///     - an OK,
-///     - a new key with a length of 64 characters containing only numbers 0 through 9 and letters A through F.
+///     - a new key with a length of 64 characters containing only numbers 0
+///       through 9 and letters A through F.
 /// - Then a test login to determine that the key was actually reset.
 #[tokio::test]
 async fn test_reset() {

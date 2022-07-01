@@ -344,7 +344,8 @@ async fn test_group_deletion() {
 /// - Authentication of the test user works as expected.
 /// - Group is created upon post request.
 /// - Group can be seen via /login as provided with no changes.
-/// - When a subject that is a member of the group is deleted, it is removed from the group.
+/// - When a subject that is a member of the group is deleted, it is removed
+///   from the group.
 #[tokio::test]
 async fn test_group_subject_deletion() {
     use instrumentality::response::CreateResponse;
@@ -754,7 +755,8 @@ async fn test_group_bad_uuid_creation() {
 /// - Authentication of the test user works as expected.
 /// - Group is created upon post request.
 /// - Group can be seen via /login as provided with no changes.
-/// - Update of group is rejected upon attempting to add non-existant subject UUID.
+/// - Update of group is rejected upon attempting to add non-existant subject
+///   UUID.
 #[tokio::test]
 async fn test_group_bad_uuid_update() {
     use instrumentality::response::CreateResponse;

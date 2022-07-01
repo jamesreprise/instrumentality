@@ -297,7 +297,10 @@ async fn test_subject_update() {
 
     assert_eq!(lr.response, "OK".to_string());
     assert_eq!(lr.user, env.user.clone());
-    assert!(lr.subjects[0].profiles.get("PLATFORM_1").unwrap() == &vec!["user1".to_string()]);
+    assert!(
+        lr.subjects[0].profiles.get("PLATFORM_1").unwrap()
+            == &vec!["user1".to_string()]
+    );
     assert!(
         lr.subjects[0].profiles.get("PLATFORM_2").unwrap()
             == &vec!["user1_on_platform2".to_string()]

@@ -37,7 +37,7 @@ pub struct NetworkConfig {
 pub struct MDBIConfig {
     pub user: String,
     pub password: String,
-    pub hosts: String, // This should be an array and be supported as an array in mdb.rs.
+    pub hosts: String, // This should be an array.
     pub port: String,
     pub database: String,
 }
@@ -52,7 +52,9 @@ pub fn open(config_path: &str) -> Result<IConfig, Box<dyn std::error::Error>> {
 impl<B: Send> FromRequest<B> for IConfig {
     type Rejection = Response;
 
-    async fn from_request(request: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
+    async fn from_request(
+        request: &mut RequestParts<B>,
+    ) -> Result<Self, Self::Rejection> {
         let config = request.extensions().get::<IConfig>().unwrap();
 
         Ok(config.clone())

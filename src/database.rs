@@ -42,14 +42,18 @@ impl DBHandle {
     }
 }
 
-pub async fn open(config: &IConfig) -> Result<DBPool, Box<dyn std::error::Error>> {
+pub async fn open(
+    config: &IConfig,
+) -> Result<DBPool, Box<dyn std::error::Error>> {
     let user = &config.mongodb.user;
     let password = &config.mongodb.password;
     let hosts = &config.mongodb.hosts;
     let port = &config.mongodb.port;
     let database = &config.mongodb.database;
-    let mut mongo_options =
-        ClientOptions::parse(format!("mongodb://{user}:{password}@{hosts}:{port}")).await?;
+    let mut mongo_options = ClientOptions::parse(format!(
+        "mongodb://{user}:{password}@{hosts}:{port}"
+    ))
+    .await?;
     mongo_options.connect_timeout = Some(Duration::new(1, 0));
     mongo_options.heartbeat_freq = Some(Duration::new(1, 0));
     mongo_options.server_selection_timeout = Some(Duration::new(1, 0));
@@ -81,7 +85,9 @@ pub async fn open(config: &IConfig) -> Result<DBPool, Box<dyn std::error::Error>
     })
 }
 
-async fn create_root_account(database: &Database) -> Result<User, Box<dyn std::error::Error>> {
+async fn create_root_account(
+    database: &Database,
+) -> Result<User, Box<dyn std::error::Error>> {
     let users_coll: Collection<User> = database.collection("users");
     let user = User::new("root");
     users_coll.insert_one(&user, None).await.unwrap();
@@ -189,7 +195,9 @@ async fn unique_content_index(
         .build();
 
     let idx_model = IndexModel::builder()
-        .keys(doc! {"content_id" : 1_u32, "platform": 1_u32, "content_type" : 1_u32})
+        .keys(doc! {"content_id" : 1_u32,
+        "platform": 1_u32,
+        "content_type" : 1_u32})
         .options(idx_options)
         .build();
 
@@ -205,7 +213,8 @@ async fn create_index(
     keys: Document,
     database: &Database,
 ) -> Result<CreateIndexResult, mongodb::error::Error> {
-    let idx_options = IndexOptions::builder().name(index_name.to_string()).build();
+    let idx_options =
+        IndexOptions::builder().name(index_name.to_string()).build();
 
     let idx_model = IndexModel::builder()
         .keys(keys)
@@ -226,7 +235,9 @@ pub async fn drop_database(database: &DBHandle) {
 impl<B: Send> FromRequest<B> for DBHandle {
     type Rejection = Response;
 
-    async fn from_request(request: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
+    async fn from_request(
+        request: &mut RequestParts<B>,
+    ) -> Result<Self, Self::Rejection> {
         let db_pool = request.extensions().get::<DBPool>().unwrap();
 
         let db = db_pool.handle();

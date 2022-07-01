@@ -14,9 +14,11 @@ use tower::Service;
 /// - Authentication of the test user works as expected.
 /// - Invite route returns the correct information:
 ///     - an OK,
-///     - an invite code with a length of 128 characters containing only numbers 0 through 9 and letters A through F.
+///     - an invite code with a length of 128 characters containing only numbers
+///       0 through 9 and letters A through F.
 ///
-/// N.B.: The integration test for register tests the whole flow of invite -> register.
+/// N.B.: The integration test for register tests the whole flow of
+/// invite -> register.
 #[tokio::test]
 async fn test_invite() {
     use instrumentality::response::InviteResponse;

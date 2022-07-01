@@ -14,8 +14,10 @@ use tower::Service;
 /// - Authentication of the test user works as expected.
 /// - Invite route returns the correct information:
 ///     - an OK,
-///     - an invite code with a length of 128 characters containing only numbers 0 through 9 and letters A through F.
-/// - Register route called with returned invite code allows creation of new user.
+///     - an invite code with a length of 128 characters containing only numbers
+///       0 through 9 and letters A through F.
+/// - Register route called with returned invite code allows creation of new
+///   user.
 /// - Login route called with created user's key is OK and has correct name.
 #[tokio::test]
 async fn test_invite_then_register() {
@@ -108,8 +110,10 @@ async fn test_invite_then_register() {
 /// - Authentication of the test user works as expected.
 /// - Invite route returns the correct information:
 ///     - an OK,
-///     - an invite code with a length of 128 characters containing only numbers 0 through 9 and letters A through F.
-/// - Register route called with returned invite code allows creation of new user.
+///     - an invite code with a length of 128 characters containing only numbers
+///       0 through 9 and letters A through F.
+/// - Register route called with returned invite code allows creation of new
+///   user.
 /// - Login route called with created user's key is OK and has correct name.
 #[tokio::test]
 async fn test_register_bad_code() {

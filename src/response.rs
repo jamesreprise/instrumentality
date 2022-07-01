@@ -60,7 +60,12 @@ pub struct QueueResponse {
 }
 
 impl QueueResponse {
-    pub fn new(queue_id: String, username: String, platform: String, platform_id: String) -> Self {
+    pub fn new(
+        queue_id: String,
+        username: String,
+        platform: String,
+        platform_id: String,
+    ) -> Self {
         Self {
             response: "OK".to_string(),
             queue_id,
