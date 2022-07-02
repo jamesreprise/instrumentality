@@ -2,7 +2,8 @@
 //!
 //! The /register route is implemented here.
 //!
-//! See endpoint documentation at <https://docs.berserksystems.com/endpoints/register/>.
+//! See endpoint documentation at 
+//! <https://docs.berserksystems.com/endpoints/register/>.
 
 use crate::database::DBHandle;
 use crate::response::{Error, RegisterResponse};

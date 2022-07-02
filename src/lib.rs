@@ -6,9 +6,9 @@
 //! You can find documentation on installation and running the server at:
 //! <https://docs.berserksystems.com/>
 //!
-//! Instrumentality makes heavy use of [Axum] and [MongoDB]. MongoDB in
-//! particular is probably not the correct choice for this system at scale, and
-//! a re-write using PostgreSQL would likely be more performant.
+//! Instrumentality makes heavy use of [Axum] and [MongoDB]. MongoDB is
+//! probably not the correct choice for this system at scale, and a re-write
+//! using PostgreSQL would likely be more performant.
 //!
 //! [MongoDB]: https://www.mongodb.com/
 //! [Axum]: https://github.com/tokio-rs/axum/
@@ -23,3 +23,4 @@ pub mod routes;
 pub mod server;
 pub mod subject;
 pub mod user;
+pub mod utils;

@@ -2,7 +2,8 @@
 //!
 //! The /reset route is implemented here.
 //!
-//! See endpoint documentation at <https://docs.berserksystems.com/endpoints/reset/>.
+//! See endpoint documentation at
+//! <https://docs.berserksystems.com/endpoints/reset/>.
 
 use crate::database::DBHandle;
 use crate::key::Key;

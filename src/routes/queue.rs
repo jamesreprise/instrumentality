@@ -1,6 +1,7 @@
 //! Route for the queue.
 //!
-//! See endpoint documentation at <https://docs.berserksystems.com/endpoints/queue/>.
+//! See endpoint documentation at 
+//! <https://docs.berserksystems.com/endpoints/queue/>.
 //!
 //! The queue is a looping structure containing all the profiles currently
 //! being tracked by Instrumentality. Profiles are only being tracked if they
@@ -68,6 +69,7 @@ use crate::key::Key;
 use crate::response::{Error, QueueResponse};
 use crate::subject::Subject;
 use crate::user::User;
+use crate::utils::deserialise_array::deserialise_array;
 
 use axum::{extract::Query, http::StatusCode, response::IntoResponse, Json};
 use chrono::offset::TimeZone;
@@ -76,7 +78,7 @@ use mongodb::bson::doc;
 use mongodb::bson::Bson;
 use mongodb::options::{FindOneAndUpdateOptions, FindOneOptions};
 use mongodb::Collection;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -110,22 +112,8 @@ impl InternalQueueItem {
 // No support for vec in query. Using workaround by jplatte.
 #[derive(Deserialize)]
 pub struct QueueQuery {
-    #[serde(deserialize_with = "deserialize_array")]
+    #[serde(deserialize_with = "deserialise_array")]
     platforms: Vec<String>,
-}
-
-fn deserialize_array<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-    let nb = s
-        .chars()
-        .filter(|c| vec!['[', ']'].contains(c))
-        .collect::<String>();
-    let v = nb.split(',').map(|s| s.into()).collect::<Vec<String>>();
-
-    Ok(v)
 }
 
 pub async fn queue(

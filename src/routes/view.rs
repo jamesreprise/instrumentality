@@ -10,13 +10,14 @@ use crate::database::DBHandle;
 use crate::key::Key;
 use crate::response::{Error, ViewResponse};
 use crate::subject::Subject;
+use crate::utils::deserialise_array::deserialise_array;
 
 use axum::{extract::Query, http::StatusCode, Json};
 use mongodb::bson::doc;
 use mongodb::bson::Document;
 use mongodb::options::FindOptions;
 use mongodb::Collection;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use tokio_stream::StreamExt;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -81,26 +82,10 @@ impl ProfileData {
     }
 }
 
-// https://github.com/tokio-rs/axum/issues/434#issuecomment-954924025
-// No support for vec in query. Using workaround by jplatte.
 #[derive(Deserialize)]
 pub struct ViewQuery {
-    #[serde(deserialize_with = "deserialize_array")]
+    #[serde(deserialize_with = "deserialise_array")]
     subjects: Vec<String>,
-}
-
-fn deserialize_array<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-    let nb = s
-        .chars()
-        .filter(|c| vec!['[', ']'].contains(c))
-        .collect::<String>();
-    let v = nb.split(',').map(|s| s.into()).collect::<Vec<String>>();
-
-    Ok(v)
 }
 
 pub async fn view(

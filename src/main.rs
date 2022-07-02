@@ -8,6 +8,7 @@ pub mod routes;
 pub mod server;
 pub mod subject;
 pub mod user;
+pub mod utils;
 
 use std::fs::File;
 use std::io::Write;
