@@ -2,7 +2,8 @@
 //!
 //! The /delete route is implemented here.
 //!
-//! See endpoint documentation at <https://docs.berserksystems.com/endpoints/delete/>.
+//! See endpoint documentation at
+//! <https://docs.berserksystems.com/endpoints/delete/>.
 
 use crate::database::DBHandle;
 use crate::group::Group;

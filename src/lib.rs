@@ -8,7 +8,8 @@
 //!
 //! Instrumentality makes heavy use of [Axum] and [MongoDB]. MongoDB is
 //! probably not the correct choice for this system at scale, and a re-write
-//! using PostgreSQL would likely be more performant.
+//! using PostgreSQL would likely be more performant. However, whilst iterating,
+//! being able to add and remove fields ad-hoc is useful.
 //!
 //! [MongoDB]: https://www.mongodb.com/
 //! [Axum]: https://github.com/tokio-rs/axum/

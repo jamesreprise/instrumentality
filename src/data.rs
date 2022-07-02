@@ -369,7 +369,8 @@ impl Datas {
     // - Is there data to be processed and is there an attached queue_id?
     // - Does the given queue_id reference an actual job?
     // - Does the queue item have a username attached or a platform id?
-    // - Does all the data in self.data pertain to the queue job? If not filter it out.
+    // - Does all the data in self.data pertain to the queue job? If not filter
+    //   it out.
     // Then get relevant data and pass it to the queue for processing.
     pub async fn process_queue(self, db: &DBHandle) -> Self {
         if !self.data.is_empty() && self.queue_id.is_some() {
@@ -382,9 +383,9 @@ impl Datas {
                 .unwrap();
             if q_item.is_some() {
                 let q_item = q_item.unwrap();
-                // We can't guarantee the queue item has the correct platform id,
-                // as it might be a new queue item. So we grab it early from any
-                // Data::Meta in the array.
+                // We can't guarantee the queue item has the correct platform
+                // id, as it might be a new queue item. So we grab it early from
+                // any Data::Meta in the array.
                 let meta = Datas::get_meta(&self.data);
                 let mut platform_id: Option<String> = None;
                 if let Some(meta) = meta {
@@ -394,7 +395,7 @@ impl Datas {
                     };
                 }
 
-                // We verify that all data in the array is pertinent to this job.
+                // We verify that all data in the array is relevant to this job.
                 for d in &self.data {
                     let verified: bool = match &d {
                         Data::Meta { platform, id, .. } => {
