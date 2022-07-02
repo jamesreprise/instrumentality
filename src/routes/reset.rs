@@ -27,7 +27,8 @@ pub async fn reset(key: Key, db: DBHandle) -> impl IntoResponse {
         _ => Err((
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(Error::new(
-                "Could not reset key. Your key remains the same. Please try again.",
+                "Could not reset key. Your key remains the same. 
+                    Please try again.",
             )),
         )),
     }

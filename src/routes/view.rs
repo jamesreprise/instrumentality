@@ -2,7 +2,8 @@
 //!
 //! The /view route is implemented here.
 //!
-//! See endpoint documentation at <https://docs.berserksystems.com/endpoints/view/>.
+//! See endpoint documentation at
+//! <https://docs.berserksystems.com/endpoints/view/>.
 
 use crate::data::Data;
 use crate::database::DBHandle;
@@ -126,20 +127,26 @@ pub async fn view(
     let subj_coll: Collection<Subject> = db.collection("subjects");
     let doc: Document = doc! {"uuid": {"$in": &subjects}};
     let subj_cursor = subj_coll.find(doc, None).await.unwrap();
-    let results: Vec<Result<Subject, mongodb::error::Error>> = subj_cursor.collect().await;
-    let subjects: Vec<Subject> = results.into_iter().map(|d| d.unwrap()).collect();
+    let results: Vec<Result<Subject, mongodb::error::Error>> =
+        subj_cursor.collect().await;
+    let subjects: Vec<Subject> =
+        results.into_iter().map(|d| d.unwrap()).collect();
 
     let mut view_data = ViewData::new();
 
     for s in subjects {
         let mut subject_data: SubjectData = SubjectData::new(s.clone());
         for platform_name in s.profiles.keys() {
-            let mut platform_data = PlatformData::new(platform_name.to_string());
+            let mut platform_data =
+                PlatformData::new(platform_name.to_string());
             for platform_id in s.profiles.get(platform_name).unwrap() {
                 let f = filter.clone();
                 let meta_data = data_coll
                     .find_one(
-                        doc! {"id": &platform_id, "platform": &platform_name, "profile_picture": {"$exists": true}},
+                        doc! {"id": &platform_id,
+                            "platform": &platform_name,
+                            "profile_picture": {"$exists": true}
+                        },
                         None,
                     )
                     .await
@@ -148,25 +155,33 @@ pub async fn view(
 
                 let presence_cursor = data_coll
                     .find(
-                        doc! {"id": &platform_id, "platform": &platform_name, "presence_type": {"$exists": true}},
+                        doc! {"id": &platform_id,
+                            "platform": &platform_name,
+                            "presence_type": {"$exists": true}
+                        },
                         f.clone(),
                     )
                     .await
                     .unwrap();
                 let presence_data: Vec<Result<Data, mongodb::error::Error>> =
                     presence_cursor.collect().await;
-                profile_data.presence = presence_data.into_iter().map(|d| d.unwrap()).collect();
+                profile_data.presence =
+                    presence_data.into_iter().map(|d| d.unwrap()).collect();
 
                 let content_cursor = data_coll
                     .find(
-                        doc! {"id": &platform_id, "platform": &platform_name, "content_type": {"$exists": true}},
+                        doc! {"id": &platform_id,
+                            "platform": &platform_name,
+                            "content_type": {"$exists": true}
+                        },
                         f.clone(),
                     )
                     .await
                     .unwrap();
                 let content_data: Vec<Result<Data, mongodb::error::Error>> =
                     content_cursor.collect().await;
-                profile_data.content = content_data.into_iter().map(|d| d.unwrap()).collect();
+                profile_data.content =
+                    content_data.into_iter().map(|d| d.unwrap()).collect();
 
                 platform_data.profiles.push(profile_data);
             }

@@ -11,7 +11,10 @@ pub async fn default() -> impl IntoResponse {
     (StatusCode::NOT_FOUND, Json(Error::new("Not found.")))
 }
 
-pub async fn error_transformer<B>(req: Request<B>, next: Next<B>) -> impl IntoResponse {
+pub async fn error_transformer<B>(
+    req: Request<B>,
+    next: Next<B>,
+) -> impl IntoResponse {
     let resp = next.run(req).await;
     let status = resp.status();
     match status {

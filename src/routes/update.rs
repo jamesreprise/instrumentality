@@ -2,7 +2,8 @@
 //!
 //! The /update route is implemented here.
 //!
-//! See endpoint documentation at <https://docs.berserksystems.com/endpoints/register/>.
+//! See endpoint documentation at
+//! <https://docs.berserksystems.com/endpoints/register/>.
 
 use crate::database::DBHandle;
 use crate::group::Group;
@@ -35,9 +36,15 @@ pub enum UpdateData {
     },
 }
 
-pub async fn update(Json(data): Json<UpdateData>, db: DBHandle, key: Key) -> impl IntoResponse {
+pub async fn update(
+    Json(data): Json<UpdateData>,
+    db: DBHandle,
+    key: Key,
+) -> impl IntoResponse {
     match data {
-        UpdateData::UpdateSubject { .. } => update_subject(&data, &db, &key).await,
+        UpdateData::UpdateSubject { .. } => {
+            update_subject(&data, &db, &key).await
+        }
         UpdateData::UpdateGroup { .. } => update_group(&data, &db, &key).await,
     }
 }
@@ -94,7 +101,11 @@ async fn update_subject(
         subj_coll
             .update_one(
                 doc! {"uuid": &uuid, "created_by": &req_uuid},
-                doc! {"$set": {"name": name, "profiles": bson::to_bson(&profiles).unwrap(), "description": description}},
+                doc! {"$set":
+                    {"name": name,
+                    "profiles": bson::to_bson(&profiles).unwrap(),
+                    "description": description}
+                },
                 None,
             )
             .await
@@ -132,18 +143,25 @@ async fn update_group(
     {
         let subj_coll: Collection<Subject> = db.collection("subjects");
         for s in subjects {
-            let subject = subj_coll.find_one(doc! {"uuid": s}, None).await.unwrap();
+            let subject =
+                subj_coll.find_one(doc! {"uuid": s}, None).await.unwrap();
             if subject.is_none() {
                 return Err((
                     StatusCode::BAD_REQUEST,
-                    Json(Error::new("One or more of the subjects does not exist.")),
+                    Json(Error::new(
+                        "One or more of the subjects does not exist.",
+                    )),
                 ));
             }
         }
         group_coll
             .update_one(
                 doc! {"uuid": &uuid, "created_by": &req_uuid},
-                doc! {"$set": {"name": name, "subjects": bson::to_bson(&subjects).unwrap(), "description": description}},
+                doc! {"$set":
+                    {"name": name,
+                    "subjects": bson::to_bson(&subjects).unwrap(),
+                    "description": description}
+                },
                 None,
             )
             .await

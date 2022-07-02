@@ -24,7 +24,11 @@ pub struct DeleteData {
 }
 
 // This is ugly. Can probably do better than an if-else.
-pub async fn delete(Json(data): Json<DeleteData>, db: DBHandle, key: Key) -> impl IntoResponse {
+pub async fn delete(
+    Json(data): Json<DeleteData>,
+    db: DBHandle,
+    key: Key,
+) -> impl IntoResponse {
     // UUID of the requester.
     let req_uuid = User::with_key(&key.key, &db).await.unwrap().uuid;
     let subj_coll: Collection<Subject> = db.collection("subjects");
@@ -43,7 +47,10 @@ pub async fn delete(Json(data): Json<DeleteData>, db: DBHandle, key: Key) -> imp
 
         if result.is_ok() {
             subj_coll
-                .delete_one(doc! {"uuid": &data.uuid, "created_by": &req_uuid}, None)
+                .delete_one(
+                    doc! {"uuid": &data.uuid, "created_by": &req_uuid},
+                    None,
+                )
                 .await
                 .unwrap();
 
@@ -67,14 +74,20 @@ pub async fn delete(Json(data): Json<DeleteData>, db: DBHandle, key: Key) -> imp
             .await
         {
             group_coll
-                .delete_one(doc! {"uuid": &data.uuid, "created_by": &req_uuid}, None)
+                .delete_one(
+                    doc! {"uuid": &data.uuid, "created_by": &req_uuid},
+                    None,
+                )
                 .await
                 .unwrap();
             Ok((StatusCode::OK, Json(Ok::new())))
         } else {
             Err((
                 StatusCode::BAD_REQUEST,
-                Json(Error::new("No such group or subject exists or it was not created by the user with the given key.")),
+                Json(Error::new(
+                    "No such group or subject exists or it was
+                 not created by the user with the given key.",
+                )),
             ))
         }
     }

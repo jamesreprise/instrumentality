@@ -2,7 +2,8 @@
 //!
 //! The /invite route is implemented here.
 //!
-//! See endpoint documentation at <https://docs.berserksystems.com/endpoints/invite/>.
+//! See endpoint documentation at
+//! <https://docs.berserksystems.com/endpoints/invite/>.
 
 use crate::database::DBHandle;
 use crate::key::Key;
@@ -58,7 +59,8 @@ async fn create_invite(
     key: Key,
     db: &DBHandle,
 ) -> Result<(StatusCode, Json<InviteResponse>), (StatusCode, Json<Error>)> {
-    let referral = Referral::new(User::with_key(&key.key, db).await.unwrap().uuid);
+    let referral =
+        Referral::new(User::with_key(&key.key, db).await.unwrap().uuid);
     let refer_coll: Collection<Referral> = db.collection("referrals");
     refer_coll.insert_one(&referral, None).await.unwrap();
 

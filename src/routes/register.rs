@@ -25,7 +25,10 @@ pub struct RegisterError;
 
 // Invites can't be double used but we are double requesting with every attempt
 // /register wrt invite_valid and use_invite.
-pub async fn register(Json(req): Json<RegisterRequest>, db: DBHandle) -> impl IntoResponse {
+pub async fn register(
+    Json(req): Json<RegisterRequest>,
+    db: DBHandle,
+) -> impl IntoResponse {
     if invite_valid(&req, &db).await && username_not_taken(&req, &db).await {
         let result = register_user(&req, &db).await;
         match result {
@@ -61,7 +64,10 @@ async fn username_not_taken(req: &RegisterRequest, db: &DBHandle) -> bool {
     matches!(result, Ok(None))
 }
 
-async fn register_user(req: &RegisterRequest, db: &DBHandle) -> Result<User, RegisterError> {
+async fn register_user(
+    req: &RegisterRequest,
+    db: &DBHandle,
+) -> Result<User, RegisterError> {
     let user = User::new(&req.name);
     let result = use_invite(&user, req, db).await;
     if result.is_ok() {

@@ -2,7 +2,8 @@
 //!
 //! The /create route is implemented here.
 //!
-//! See endpoint documentation at <https://docs.berserksystems.com/endpoints/create/>.
+//! See endpoint documentation at
+//! <https://docs.berserksystems.com/endpoints/create/>.
 
 use crate::config::IConfig;
 use crate::database::DBHandle;
@@ -52,21 +53,29 @@ pub async fn create(
                     {
                         return Err((
                             StatusCode::BAD_REQUEST,
-                            Json(Error::new("Profiles contains unsupported platform(s).")),
+                            Json(Error::new(
+                                "Profiles contains unsupported platform(s).",
+                            )),
                         ));
                     }
                 }
                 if subj_coll.insert_one(&subject, None).await.is_ok() {
                     for platform in subject.profiles.keys() {
                         for id in subject.profiles.get(platform).unwrap() {
-                            queue::add_queue_item(id, platform, &db, false).await;
+                            queue::add_queue_item(id, platform, &db, false)
+                                .await;
                         }
                     }
-                    Ok((StatusCode::OK, Json(CreateResponse::new(&subject.uuid))))
+                    Ok((
+                        StatusCode::OK,
+                        Json(CreateResponse::new(&subject.uuid)),
+                    ))
                 } else {
                     Err((
                         StatusCode::CONFLICT,
-                        Json(Error::new("Subject by that name already exists.")),
+                        Json(Error::new(
+                            "Subject by that name already exists.",
+                        )),
                     ))
                 }
             } else {
@@ -81,11 +90,16 @@ pub async fn create(
             if let Some(group) = group_from_create(data, &db, key).await {
                 let subj_coll: Collection<Subject> = db.collection("subjects");
                 for s in &group.subjects {
-                    let subject = subj_coll.find_one(doc! {"uuid": s}, None).await.unwrap();
+                    let subject = subj_coll
+                        .find_one(doc! {"uuid": s}, None)
+                        .await
+                        .unwrap();
                     if subject.is_none() {
                         return Err((
                             StatusCode::BAD_REQUEST,
-                            Json(Error::new("One or more of the subjects does not exist.")),
+                            Json(Error::new(
+                                "One or more of the subjects does not exist.",
+                            )),
                         ));
                     }
                 }
@@ -107,7 +121,11 @@ pub async fn create(
     }
 }
 
-pub async fn group_from_create(cs: CreateData, db: &DBHandle, key: Key) -> Option<Group> {
+pub async fn group_from_create(
+    cs: CreateData,
+    db: &DBHandle,
+    key: Key,
+) -> Option<Group> {
     match cs {
         CreateData::CreateGroup {
             name,
@@ -125,7 +143,11 @@ pub async fn group_from_create(cs: CreateData, db: &DBHandle, key: Key) -> Optio
     }
 }
 
-pub async fn subject_from_create(cs: CreateData, db: &DBHandle, key: Key) -> Option<Subject> {
+pub async fn subject_from_create(
+    cs: CreateData,
+    db: &DBHandle,
+    key: Key,
+) -> Option<Subject> {
     match cs {
         CreateData::CreateSubject {
             name,

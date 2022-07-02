@@ -2,7 +2,8 @@
 //!
 //! The /add route is implemented here.
 //!
-//! See endpoint documentation at <https://docs.berserksystems.com/endpoints/add/>.
+//! See endpoint documentation at
+//! <https://docs.berserksystems.com/endpoints/add/>.
 //!
 //! See [`Data`] for examples of valid data objects.
 
@@ -38,6 +39,13 @@ pub async fn add(
         data_coll.insert_many(data.data, None).await.unwrap();
         Ok((StatusCode::OK, Json(Ok::new())))
     } else {
-        Err((StatusCode::NOT_ACCEPTABLE, Json(Error::new("No valid data was submitted. Ensure the given platforms and content/presence types are supported by this server. Ensure all data was correctly labeled for queue jobs."))))
+        Err((
+            StatusCode::NOT_ACCEPTABLE,
+            Json(Error::new(
+                "No valid data was submitted. Ensure the given platforms and 
+            content/presence types are supported by this server. Ensure all data
+             was correctly labeled for queue jobs.",
+            )),
+        ))
     }
 }

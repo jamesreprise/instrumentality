@@ -150,11 +150,12 @@ pub async fn queue(
             )),
         ))
     } else {
-        // This is not optimal for performance. Should be running as a scheduled task in a thread.
+        // This is not optimal for performance. 
+        // Should be running as a scheduled task in a thread.
         clear_old_locks(&db).await;
 
-        let filter_builder =
-            FindOneAndUpdateOptions::builder().sort(doc! {"last_processed": -1_i32});
+        let filter_builder = FindOneAndUpdateOptions::builder()
+            .sort(doc! {"last_processed": -1_i32});
 
         let filter = filter_builder.build();
 
@@ -164,7 +165,9 @@ pub async fn queue(
                 doc! {"lock_holder": Bson::Null, "platform": {"$in": &platforms}},
                 doc! {"$set": 
                                 {
-                                "lock_holder": User::with_key(&key.key, &db).await.unwrap().uuid, "lock_acquired_at": Utc::now().to_string()
+                                "lock_holder": User::with_key(&key.key, &db)
+                                    .await.unwrap().uuid, 
+                                "lock_acquired_at": Utc::now().to_string()
                                 }
                             },
                 filter,
@@ -172,7 +175,8 @@ pub async fn queue(
             .await
             .unwrap();
         if let Some(q_item) = result {
-            let username: String = get_username(&q_item.platform_id, &q_item.platform, &db).await;
+            let username: String =
+                get_username(&q_item.platform_id, &q_item.platform, &db).await;
 
             Ok((
                 StatusCode::OK,
@@ -194,7 +198,7 @@ pub async fn queue(
     }
 }
 
-// This is a really bad function. The logic needs to be simplified significantly.
+// This is a really bad function. The logic should be simplified significantly.
 // There are several sources of uncertainty that this function resolves:
 // - Does the supplied queue_id actually exist?
 // - Is the queue item's lock held by the user submitting the data?
@@ -215,7 +219,11 @@ pub async fn process(
         let find_result = q_coll
         .find_one(
             // It's possible we haven't found an ID for this user yet.
-            doc! {"queue_id" : queue_id, "platform": platform, "platform_id": &username, "lock_holder": added_by, "confirmed_id": false},
+            doc! {"queue_id" : queue_id, 
+                        "platform": platform, 
+                        "platform_id": &username, 
+                        "lock_holder": added_by, 
+                        "confirmed_id": false},
             None,
         )
         .await
@@ -245,7 +253,12 @@ pub async fn process(
     let q_update_result = q_coll
         .update_one(
             doc! {"queue_id" : queue_id, "lock_holder": added_by},
-            doc! {"$set": {"lock_holder": Bson::Null, "lock_acquired_at": Bson::Null, "last_processed": Utc::now().to_string()}},
+            doc! {"$set": 
+                {"lock_holder": Bson::Null, 
+                "lock_acquired_at": Bson::Null, 
+                "last_processed": Utc::now().to_string()
+                }
+            },
             None,
         )
         .await
@@ -253,7 +266,12 @@ pub async fn process(
     q_update_result.modified_count == 1
 }
 
-pub async fn add_queue_item(platform_id: &str, platform: &str, db: &DBHandle, confirmed_id: bool) {
+pub async fn add_queue_item(
+    platform_id: &str,
+    platform: &str,
+    db: &DBHandle,
+    confirmed_id: bool,
+) {
     let q_coll: Collection<InternalQueueItem> = db.collection("queue");
     let q_item = q_coll
         .find_one(
@@ -282,17 +300,25 @@ pub async fn add_queue_item(platform_id: &str, platform: &str, db: &DBHandle, co
                 .unwrap();
         }
     } else {
-        let q_item: InternalQueueItem =
-            InternalQueueItem::new(platform_id.to_string(), platform.to_string());
+        let q_item: InternalQueueItem = InternalQueueItem::new(
+            platform_id.to_string(),
+            platform.to_string(),
+        );
         q_coll.insert_one(q_item, None).await.unwrap();
     }
 }
 
-pub async fn remove_queue_item(platform_id: &str, platform: &str, db: &DBHandle) {
+pub async fn remove_queue_item(
+    platform_id: &str,
+    platform: &str,
+    db: &DBHandle,
+) {
     let q_coll: Collection<InternalQueueItem> = db.collection("queue");
     let result = q_coll
         .delete_one(
-            doc! {"platform_id": platform_id, "platform": platform, "references": 1},
+            doc! {"platform_id": platform_id, 
+                        "platform": platform, 
+                        "references": 1},
             None,
         )
         .await
@@ -315,16 +341,28 @@ pub async fn clear_old_locks(db: &DBHandle) {
     q_coll
         .update_many(
             doc! {"lock_acquired_at": {"$lt": thirty_seconds_ago.to_string()}},
-            doc! {"$set": {"lock_acquired_at": Bson::Null, "lock_holder": Bson::Null}},
+            doc! {"$set": 
+                {"lock_acquired_at": Bson::Null, 
+                "lock_holder": Bson::Null}
+            },
             None,
         )
         .await
         .unwrap();
 }
 
-pub async fn get_username(platform_id: &str, platform: &str, db: &DBHandle) -> String {
-    async fn from_meta(platform_id: &str, platform: &str, db: &DBHandle) -> Option<String> {
-        let filter_builder = FindOneOptions::builder().projection(doc! {"username": 1_u32});
+pub async fn get_username(
+    platform_id: &str,
+    platform: &str,
+    db: &DBHandle,
+) -> String {
+    async fn from_meta(
+        platform_id: &str,
+        platform: &str,
+        db: &DBHandle,
+    ) -> Option<String> {
+        let filter_builder =
+            FindOneOptions::builder().projection(doc! {"username": 1_u32});
 
         let filter = filter_builder.build();
 
